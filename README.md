@@ -60,14 +60,15 @@ mandar un equipo a revisión) las aplica el backend según las reglas, no la IA.
 |---|---|---|
 | R1 | Un espacio no puede tener reservas que se crucen | — |
 | R2 | Los asistentes no pueden superar el aforo | — |
-| R3 | No se reservan espacios bloqueados/en mantenimiento ni se prestan equipos prestados, en revisión o dañados | — |
+| R3 | No se reservan espacios bloqueados/en mantenimiento **en esa fecha** (los bloqueos tienen desde/hasta) ni se prestan equipos prestados, en revisión o dañados | — |
 | R4 | Máximo de préstamos activos por usuario y ninguno si tiene uno vencido | 2 |
 | R5 | Reservas dentro del horario, no en el pasado y con duración máxima; préstamos con horas máximas | 07:00–21:00, 4 h, 24 h |
-| R6 | Una incidencia Alta/Crítica bloquea el espacio y manda el equipo a revisión; al resolverse se liberan | Alta, Crítica |
+| R6 | Una incidencia Alta/Crítica bloquea el espacio hasta una fecha estimada de liberación (o hasta resolverla) y manda el equipo a revisión | Alta: 1 día, Crítica: 3 días |
 | R7 | Los campers solo reservan cubículos | Cubiculo |
 
 **Cambio en vivo:** se edita `CONFIG` en `server/rules.js` (por ejemplo `reservas.maxHoras: 2`), se guarda y
-el servidor se reinicia solo con `npm run dev`. La pantalla **Reglas activas** muestra los valores vigentes.
+el servidor se reinicia solo con `npm run dev`. La pantalla **Reglas activas** las muestra en lenguaje
+cotidiano y el administrador puede desactivar o reactivar cada una (se guarda en la tabla `rule_state`).
 
 ## Datos oficiales
 
@@ -77,11 +78,24 @@ inconsistente (capacidad negativa, código duplicado, tipo desconocido, equipo "
 rechaza con su motivo y queda visible en la app. Para usar los datos del día, se reemplazan esos CSV o se
 importan desde la pantalla.
 
-## Usuarios de demostración (ficticios)
+## Acceso, roles y usuarios de prueba
 
-El login es por perfil, sin contraseñas: Valentina Ríos (Administrador), Andrés Pineda (Coordinador académico),
-Camila Duarte (Técnico de soporte), Miguel Ángel Torres (Trainer), Sofía Herrera y Daniel Rojas (Campers;
-Daniel tiene un préstamo vencido para demostrar la regla R4).
+Cada persona entra con **correo y contraseña** (guardada con hash scrypt, con límite de intentos) y puede
+**registrarse**: queda como Camper y el administrador le asigna otro rol desde **Usuarios**. El rol sale siempre
+del servidor y cada endpoint valida el permiso (un técnico que llame a una ruta de administrador recibe 403).
+
+| Rol | Qué puede hacer |
+|---|---|
+| Administrador | Panel global, tablero de incidencias y consulta a la IA, reglas (activar/desactivar), usuarios, datos importados |
+| Coordinador académico | Panel global, reservas y préstamos, tablero de incidencias y consulta a la IA, datos importados |
+| Técnico de soporte | Reporta incidencias, las gestiona y registra avances en la bitácora, programa mantenimientos |
+| Trainer | Reserva espacios, pide equipos y reporta incidencias |
+| Camper | Panel personal (sus reservas, préstamos e incidencias), reserva cubículos, pide equipos y reporta incidencias |
+
+Usuarios de prueba (ficticios), todos `@campus.demo`: `valentina.rios` (Administrador), `andres.pineda`
+(Coordinador), `camila.duarte` (Técnico), `miguel.torres` (Trainer), `sofia.herrera` y `daniel.rojas` (Campers;
+Daniel tiene un préstamo vencido para demostrar R4). Su contraseña es la de la variable `SEED_PASSWORD`
+(no está en el repositorio). Con `DEMO_LOGIN=true` aparece además un acceso rápido por perfil para la presentación.
 
 ## Instalación y ejecución
 
@@ -104,6 +118,8 @@ Variables de entorno (archivo `.env`, que **no** se sube a Git):
 | `NEMOTRON_BASE_URL` | Opcional. Por defecto `https://openrouter.ai/api/v1` (sirve también la API de NVIDIA) |
 | `DATABASE_URL` | Cadena de conexión de Supabase. Vacía = PostgreSQL embebido local |
 | `SESSION_SECRET` | Texto aleatorio para firmar las sesiones |
+| `SEED_PASSWORD` | Contraseña de los usuarios de prueba (se guarda con hash al iniciar). Sin ella se genera una y se muestra en la consola |
+| `DEMO_LOGIN` | Opcional. `true` muestra el acceso rápido por perfil en el login (solo para la demo) |
 
 **Producción** (un solo servicio): `npm install && npm run build` y luego `npm start`. Express sirve la API y
 el frontend compilado.
