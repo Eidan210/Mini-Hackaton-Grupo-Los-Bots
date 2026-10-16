@@ -37,6 +37,11 @@
 }
 
 html, body, #root { height: 100%; }
+/* En el celular, un elemento absoluto (p. ej. un .sr-only dentro de una tabla con scroll) puede escapar de su
+   contenedor y ensanchar la página: iOS entonces reduce el zoom de todo. Los contenedores con scroll horizontal
+   pasan a ser su bloque contenedor y el body recorta cualquier desborde lateral. */
+.overflow-x-auto { position: relative; }
+body { overflow-x: clip; }
 html { scrollbar-width: thin; scrollbar-color: #5a5c65 transparent; }
 body {
   margin: 0;
