@@ -88,7 +88,7 @@ Requisitos: Node.js 20.12 o superior.
 
 ```bash
 npm install
-# Crear el archivo .env en la raíz con las variables de abajo
+cp env.example .env   # y rellenar las variables de abajo
 npm run dev        # API en :3001 y web en http://localhost:5173
 npm test           # pruebas de las reglas y del importador
 ```
