@@ -3,7 +3,7 @@
 Hackatón Campuslands **"El campus bajo presión"** · Grupo **Los Bots**
 
 Un solo sistema para **reservar espacios**, **prestar equipos** y **reportar incidencias**, donde una IA
-(**Nemotron Ultra** de NVIDIA) clasifica y prioriza cada incidencia y propone alternativas cuando una reserva
+(**Nemotron 3 Ultra** de NVIDIA, vía OpenRouter) clasifica y prioriza cada incidencia y propone alternativas cuando una reserva
 se rechaza. Las reglas de negocio viven en un único archivo (`server/rules.js`) para poder cambiarlas en vivo.
 
 ## Problema
@@ -28,7 +28,7 @@ que se siguen prestando e incidencias que nadie prioriza.
 - **Frontend:** React 19 + Vite + Tailwind CSS 4 (tema oscuro estilo Portal Campers)
 - **Backend:** Node.js + Express 5, validación con Zod
 - **Base de datos:** PostgreSQL en **Supabase** (`DATABASE_URL`). Sin URL, usa PostgreSQL embebido (PGlite) para desarrollo.
-- **IA:** Nemotron Ultra vía API de NVIDIA (compatible con OpenAI)
+- **IA:** Nemotron 3 Ultra vía OpenRouter (API compatible con OpenAI), con respaldo automático a Nemotron 3 Super si Ultra no responde
 
 ```
 web/ (React)  ──/api──▶  server/index.js (Express)
@@ -49,7 +49,8 @@ web/ (React)  ──/api──▶  server/index.js (Express)
 
 **Control de las respuestas:** la IA debe responder JSON, que se valida con Zod contra los catálogos
 (categorías, prioridades y áreas válidas). Los ids que no existen se descartan, se reintenta una vez si el
-formato no cumple y, si la IA falla, el sistema lo dice y permite **clasificar manualmente**: nunca se
+formato no cumple, si el modelo principal no responde se pasa a otro modelo Nemotron (la pantalla muestra
+cuál respondió) y, si todos fallan, el sistema lo dice y permite **clasificar manualmente**: nunca se
 inventa una respuesta. La IA **propone** y la persona **confirma**: las consecuencias (bloquear un aula,
 mandar un equipo a revisión) las aplica el backend según las reglas, no la IA.
 
@@ -97,9 +98,10 @@ Variables de entorno (archivo `.env`, que **no** se sube a Git):
 
 | Variable | Para qué |
 |---|---|
-| `NEMOTRON_API_KEY` | Clave gratuita de build.nvidia.com |
-| `NEMOTRON_MODEL` | Opcional. Por defecto `nvidia/llama-3.1-nemotron-ultra-253b-v1` |
-| `NEMOTRON_BASE_URL` | Opcional. Por defecto `https://integrate.api.nvidia.com/v1` |
+| `NEMOTRON_API_KEY` | Clave gratuita de OpenRouter (openrouter.ai/keys) |
+| `NEMOTRON_MODEL` | Opcional. Por defecto `nvidia/nemotron-3-ultra-550b-a55b:free` |
+| `NEMOTRON_FALLBACK_MODELS` | Opcional. Modelos de respaldo separados por coma (por defecto Nemotron 3 Super y 3.5 Super VL) |
+| `NEMOTRON_BASE_URL` | Opcional. Por defecto `https://openrouter.ai/api/v1` (sirve también la API de NVIDIA) |
 | `DATABASE_URL` | Cadena de conexión de Supabase. Vacía = PostgreSQL embebido local |
 | `SESSION_SECRET` | Texto aleatorio para firmar las sesiones |
 
