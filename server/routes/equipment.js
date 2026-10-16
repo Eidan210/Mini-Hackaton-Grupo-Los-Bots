@@ -5,17 +5,50 @@ import { query, tx, logActivity } from '../db.js';
 import { requirePermiso } from '../auth.js';
 import { HttpError, notFound, ruleError } from '../http.js';
 import { CONFIG, validarPrestamo } from '../rules.js';
+import { reglasActivas } from '../ruleState.js';
 
 const router = Router();
 
 router.get('/equipment', async (_req, res) => {
-  const { rows } = await query(`
-    SELECT e.*, u.name AS borrower_name, l.due_at
-    FROM equipment e
-    LEFT JOIN loans l ON l.equipment_id = e.id AND l.status = 'activo'
-    LEFT JOIN users u ON u.id = l.user_id
-    ORDER BY e.category, e.code`);
-  res.json(rows);
+  const [{ rows }, { rows: reports }] = await Promise.all([
+    query(`
+      SELECT e.*, u.name AS borrower_name, l.due_at
+      FROM equipment e
+      LEFT JOIN loans l ON l.equipment_id = e.id AND l.status = 'activo'
+      LEFT JOIN users u ON u.id = l.user_id
+      ORDER BY e.category, e.code`),
+    // Incidencia no resuelta más reciente por equipo, con técnico asignado y su última nota.
+    query(`
+      SELECT DISTINCT ON (i.equipment_id) i.equipment_id, i.id AS incident_id, i.code AS incident_code, i.title, i.status,
+        i.priority, i.created_at, r.name AS reported_by_name, t.name AS assigned_name, t.email AS assigned_email,
+        n.text AS last_note, n.created_at AS last_note_at
+      FROM incidents i
+      JOIN users r ON r.id = i.reported_by
+      LEFT JOIN users t ON t.id = i.assigned_to
+      LEFT JOIN LATERAL (SELECT text, created_at FROM incident_notes WHERE incident_id = i.id ORDER BY created_at DESC LIMIT 1) n ON TRUE
+      WHERE i.equipment_id IS NOT NULL AND i.status <> 'resuelta'
+      ORDER BY i.equipment_id, i.created_at DESC`),
+  ]);
+  const byEquipment = new Map(reports.map(({ equipment_id: id, ...r }) => [id, r]));
+  res.json(rows.map((e) => ({ ...e, report: byEquipment.get(e.id) || null })));
+});
+
+// El administrador o coordinador pide al técnico una actualización sobre un equipo fuera de servicio.
+router.post('/equipment/:id/consult', requirePermiso('consultar_ia_incidencias'), async (req, res) => {
+  const result = await tx(async ({ query: q }) => {
+    const { rows } = await q(
+      `SELECT i.id, i.code, i.assigned_to, e.name, e.code AS equipment_code, t.name AS assigned_name
+       FROM incidents i JOIN equipment e ON e.id = i.equipment_id LEFT JOIN users t ON t.id = i.assigned_to
+       WHERE i.equipment_id = $1 AND i.status <> 'resuelta' ORDER BY i.created_at DESC LIMIT 1`, [req.params.id]);
+    const inc = rows[0];
+    if (!inc) throw new HttpError(409, 'SIN_REPORTE', 'Este equipo no tiene una incidencia abierta a la que pedir actualización.');
+    await q('INSERT INTO incident_notes (incident_id, author_id, text) VALUES ($1, $2, $3)',
+      [inc.id, req.user.id, `Solicitud de actualización: ${req.user.name} pide un informe del estado de ${inc.name} (${inc.equipment_code}).`]);
+    await q('UPDATE incidents SET updated_at = now() WHERE id = $1', [inc.id]);
+    await logActivity(q, 'consulta', `${req.user.name} pidió una actualización de ${inc.code} (${inc.name})`, req.user.id, inc.assigned_to);
+    return { ok: true, notified: inc.assigned_name || null };
+  });
+  res.json(result);
 });
 
 router.patch('/equipment/:id/status', requirePermiso('cambiar_estado_recurso'), async (req, res) => {
@@ -34,7 +67,7 @@ router.patch('/equipment/:id/status', requirePermiso('cambiar_estado_recurso'), 
       }
     }
     const { rows: upd } = await q('UPDATE equipment SET status = $2 WHERE id = $1 RETURNING *', [req.params.id, status]);
-    await logActivity(q, 'estado', `${upd[0].name} (${upd[0].code}) cambió a "${status}" (${req.user.name})`);
+    await logActivity(q, 'estado', `${upd[0].name} (${upd[0].code}) cambió a "${status}" (${req.user.name})`, req.user.id);
     return upd[0];
   });
   res.json({ equipment });
@@ -62,14 +95,14 @@ router.post('/loans', requirePermiso('prestar'), async (req, res) => {
     const { rows } = await q('SELECT * FROM equipment WHERE id = $1 FOR UPDATE', [body.equipmentId]);
     if (!rows[0]) throw notFound('El equipo');
     const { rows: activos } = await q(`SELECT * FROM loans WHERE user_id = $1 AND status = 'activo'`, [req.user.id]);
-    const v = validarPrestamo({ equipment: rows[0], hours: body.hours, prestamosActivos: activos });
+    const v = validarPrestamo({ equipment: rows[0], hours: body.hours, prestamosActivos: activos, activas: await reglasActivas(q) });
     if (v) throw ruleError(v);
     const { rows: ins } = await q(
       `INSERT INTO loans (equipment_id, user_id, due_at) VALUES ($1, $2, now() + make_interval(mins => $3)) RETURNING id`,
       [body.equipmentId, req.user.id, Math.round(body.hours * 60)],
     );
     await q(`UPDATE equipment SET status = 'prestado' WHERE id = $1`, [body.equipmentId]);
-    await logActivity(q, 'prestamo', `${req.user.name} recibió ${rows[0].name} (${rows[0].code}) por ${body.hours} h`);
+    await logActivity(q, 'prestamo', `${req.user.name} recibió ${rows[0].name} (${rows[0].code}) por ${body.hours} h`, req.user.id);
     return (await q(`${LOAN_SELECT} WHERE l.id = $1`, [ins[0].id])).rows[0];
   });
   res.status(201).json({ loan });
@@ -90,7 +123,7 @@ router.post('/loans/:id/return', async (req, res) => {
       [l.equipment_id, CONFIG.incidencias.prioridadesQueBloquean],
     );
     await q('UPDATE equipment SET status = $2 WHERE id = $1', [l.equipment_id, inc.length ? 'en_revision' : 'disponible']);
-    await logActivity(q, 'devolucion', `Devolución de ${l.equipment_name} (${l.equipment_code})${l.overdue ? ' con retraso' : ''}`);
+    await logActivity(q, 'devolucion', `Devolución de ${l.equipment_name} (${l.equipment_code})${l.overdue ? ' con retraso' : ''}`, req.user.id, l.user_id);
     return (await q(`${LOAN_SELECT} WHERE l.id = $1`, [l.id])).rows[0];
   });
   res.json({ loan });

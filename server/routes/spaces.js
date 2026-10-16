@@ -1,10 +1,11 @@
-// Módulo 1: espacios y reservas (+ recomendación de alternativa con IA).
+// Módulo 1: espacios, bloqueos con fecha y reservas (+ recomendación de alternativa con IA).
 import { Router } from 'express';
 import { z } from 'zod';
 import { query, tx, logActivity } from '../db.js';
 import { requirePermiso } from '../auth.js';
 import { HttpError, notFound, ruleError } from '../http.js';
-import { CONFIG, validarReserva } from '../rules.js';
+import { bloqueoEnFecha, validarReserva } from '../rules.js';
+import { reglasActivas } from '../ruleState.js';
 import { recomendarEspacio } from '../ai/triage.js';
 import { localDate } from '../seed.js';
 
@@ -23,33 +24,66 @@ const bookingBody = z.object({
 
 const BOOKING_SELECT = `SELECT b.*, s.name AS space_name, u.name AS organizer_name
   FROM bookings b JOIN spaces s ON s.id = b.space_id JOIN users u ON u.id = b.organizer_id`;
+const BLOCK_SELECT = `SELECT sb.*, i.code AS incident_code FROM space_blocks sb LEFT JOIN incidents i ON i.id = sb.incident_id`;
+
+/** Estado de un espacio en una fecha concreta, según sus bloqueos (R3 con fechas). */
+function conEstado(space, blocks, date) {
+  const b = bloqueoEnFecha(blocks.filter((x) => x.space_id === space.id), date);
+  return {
+    ...space,
+    status: b ? (b.tipo === 'mantenimiento' ? 'mantenimiento' : 'bloqueado') : 'disponible',
+    block: b ? { id: b.id, tipo: b.tipo, desde: b.desde, hasta: b.hasta, motivo: b.motivo, incident_code: b.incident_code } : null,
+  };
+}
 
 router.get('/spaces', async (req, res) => {
   const date = fecha.catch(localDate()).parse(req.query.date);
-  const [{ rows: spaces }, { rows: bookings }] = await Promise.all([
+  const [{ rows: spaces }, { rows: bookings }, { rows: blocks }] = await Promise.all([
     query('SELECT * FROM spaces ORDER BY type, code'),
     query(`${BOOKING_SELECT} WHERE b.date = $1 AND b.status = 'confirmada' ORDER BY b.start_time`, [date]),
+    query(`${BLOCK_SELECT} WHERE sb.activo AND sb.desde <= $1 AND $1 <= sb.hasta`, [date]),
   ]);
-  res.json(spaces.map((s) => ({ ...s, bookings: bookings.filter((b) => b.space_id === s.id) })));
+  res.json(spaces.map((s) => ({ ...conEstado(s, blocks, date), bookings: bookings.filter((b) => b.space_id === s.id) })));
 });
 
-router.patch('/spaces/:id/status', requirePermiso('cambiar_estado_recurso'), async (req, res) => {
-  const { status } = z.object({ status: z.enum(['disponible', 'mantenimiento', 'bloqueado']) }).parse(req.body);
-  const space = await tx(async ({ query: q }) => {
-    const { rows } = await q('SELECT * FROM spaces WHERE id = $1 FOR UPDATE', [req.params.id]);
+router.post('/spaces/:id/blocks', requirePermiso('cambiar_estado_recurso'), async (req, res) => {
+  const body = z.object({
+    tipo: z.enum(['mantenimiento', 'bloqueo']),
+    desde: fecha,
+    hasta: fecha,
+    motivo: z.string().trim().min(3, 'escribe el motivo').max(160),
+  }).refine((b) => b.desde <= b.hasta, { message: 'la fecha "hasta" debe ser igual o posterior a "desde"', path: ['hasta'] })
+    .parse(req.body);
+  const block = await tx(async ({ query: q }) => {
+    const { rows } = await q('SELECT * FROM spaces WHERE id = $1', [req.params.id]);
     if (!rows[0]) throw notFound('El espacio');
-    if (status === 'disponible') {
-      const open = await q(`SELECT code FROM incidents WHERE space_id = $1 AND status <> 'resuelta' AND priority = ANY($2)`,
-        [req.params.id, CONFIG.incidencias.prioridadesQueBloquean]);
-      if (open.rows.length) {
-        throw new HttpError(409, 'REGLA_INCIDENCIA_ABIERTA', `No se puede habilitar: la incidencia ${open.rows[0].code} sigue abierta. Resuélvela primero.`, { rule: 'R6' });
+    const { rows: ins } = await q(
+      `INSERT INTO space_blocks (space_id, tipo, desde, hasta, motivo, created_by) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [req.params.id, body.tipo, body.desde, body.hasta, body.motivo, req.user.id],
+    );
+    await logActivity(q, 'estado', `${rows[0].name}: ${body.tipo} del ${body.desde} al ${body.hasta} (${body.motivo})`, req.user.id);
+    return ins[0];
+  });
+  res.status(201).json({ block });
+});
+
+router.delete('/spaces/:id/blocks/:blockId', requirePermiso('cambiar_estado_recurso'), async (req, res) => {
+  await tx(async ({ query: q }) => {
+    const { rows } = await q(
+      `${BLOCK_SELECT} WHERE sb.id = $1 AND sb.space_id = $2 AND sb.activo`, [Number(req.params.blockId) || 0, req.params.id]);
+    const b = rows[0];
+    if (!b) throw notFound('El bloqueo');
+    if (b.incident_id) {
+      const { rows: inc } = await q(`SELECT code FROM incidents WHERE id = $1 AND status <> 'resuelta'`, [b.incident_id]);
+      if (inc[0]) {
+        throw new HttpError(409, 'REGLA_INCIDENCIA_ABIERTA', `No se puede liberar: la incidencia ${inc[0].code} sigue abierta. Resuélvela primero.`, { rule: 'R6' });
       }
     }
-    const { rows: upd } = await q('UPDATE spaces SET status = $2 WHERE id = $1 RETURNING *', [req.params.id, status]);
-    await logActivity(q, 'estado', `${upd[0].name} cambió a "${status}" (${req.user.name})`);
-    return upd[0];
+    await q('UPDATE space_blocks SET activo = false WHERE id = $1', [b.id]);
+    const { rows: s } = await q('SELECT name FROM spaces WHERE id = $1', [req.params.id]);
+    await logActivity(q, 'estado', `${s[0].name} quedó disponible (se liberó: ${b.motivo})`, req.user.id);
   });
-  res.json({ space });
+  res.json({ ok: true });
 });
 
 router.get('/bookings', async (req, res) => {
@@ -65,14 +99,17 @@ router.post('/bookings', requirePermiso('reservar'), async (req, res) => {
     const { rows } = await q('SELECT * FROM spaces WHERE id = $1 FOR UPDATE', [body.spaceId]);
     if (!rows[0]) throw notFound('El espacio');
     const { rows: existing } = await q(`SELECT * FROM bookings WHERE space_id = $1 AND date = $2 AND status = 'confirmada'`, [body.spaceId, body.date]);
-    const v = validarReserva({ space: rows[0], request: body, bookings: existing, user: req.user });
+    const { rows: blocks } = await q(`${BLOCK_SELECT} WHERE sb.space_id = $1 AND sb.activo`, [body.spaceId]);
+    const activas = await reglasActivas(q);
+    const space = conEstado(rows[0], blocks, body.date);
+    const v = validarReserva({ space, request: body, bookings: existing, user: req.user, activas });
     if (v) throw ruleError(v);
     const { rows: ins } = await q(
       `INSERT INTO bookings (space_id, title, organizer_id, date, start_time, end_time, attendees)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
       [body.spaceId, body.title, req.user.id, body.date, body.startTime, body.endTime, body.attendees],
     );
-    await logActivity(q, 'reserva', `Reserva de ${rows[0].name} el ${body.date} de ${body.startTime} a ${body.endTime}: "${body.title}"`);
+    await logActivity(q, 'reserva', `Reserva de ${rows[0].name} el ${body.date} de ${body.startTime} a ${body.endTime}: "${body.title}"`, req.user.id);
     return (await q(`${BOOKING_SELECT} WHERE b.id = $1`, [ins[0].id])).rows[0];
   });
   res.status(201).json({ booking });
@@ -86,20 +123,22 @@ router.delete('/bookings/:id', async (req, res) => {
   if (!puede) throw new HttpError(403, 'SIN_PERMISO', 'Solo quien hizo la reserva o un coordinador puede cancelarla.');
   if (b.status === 'cancelada') throw new HttpError(409, 'YA_CANCELADA', 'La reserva ya estaba cancelada.');
   await query(`UPDATE bookings SET status = 'cancelada' WHERE id = $1`, [b.id]);
-  await logActivity(query, 'reserva', `Se canceló la reserva de ${b.space_name} (${b.start_time}-${b.end_time})`);
+  await logActivity(query, 'reserva', `Se canceló la reserva de ${b.space_name} (${b.start_time}-${b.end_time})`, req.user.id, b.organizer_id);
   res.json({ booking: { ...b, status: 'cancelada' } });
 });
 
 router.post('/ai/recommend-space', async (req, res) => {
   const body = bookingBody.omit({ title: true }).parse(req.body);
-  const [{ rows: spaces }, { rows: bookings }] = await Promise.all([
+  const [{ rows: spaces }, { rows: bookings }, { rows: blocks }, activas] = await Promise.all([
     query('SELECT * FROM spaces ORDER BY code'),
     query(`SELECT * FROM bookings WHERE date = $1 AND status = 'confirmada'`, [body.date]),
+    query(`${BLOCK_SELECT} WHERE sb.activo AND sb.desde <= $1 AND $1 <= sb.hasta`, [body.date]),
+    reglasActivas(query),
   ]);
   const original = spaces.find((s) => s.id === body.spaceId);
-  // Solo se le pasan a la IA los espacios que YA cumplen todas las reglas.
-  const candidates = spaces.filter((s) => s.id !== body.spaceId && !validarReserva({
-    space: s, request: body, bookings: bookings.filter((b) => b.space_id === s.id), user: req.user,
+  // Solo se le pasan a la IA los espacios que YA cumplen todas las reglas activas en esa fecha.
+  const candidates = spaces.map((s) => conEstado(s, blocks, body.date)).filter((s) => s.id !== body.spaceId && !validarReserva({
+    space: s, request: body, bookings: bookings.filter((b) => b.space_id === s.id), user: req.user, activas,
   }));
   if (!candidates.length) return res.json({ suggestion: null, candidates: 0, model: null });
   const result = await recomendarEspacio({ original, request: body, candidates });

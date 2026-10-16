@@ -5,7 +5,7 @@ import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { connect, dbKind } from './db.js';
-import { seedIfEmpty } from './seed.js';
+import { migrateV2, seedIfEmpty } from './seed.js';
 import { errorHandler } from './http.js';
 import { publicRouter, router as coreRouter } from './routes/core.js';
 import spacesRouter from './routes/spaces.js';
@@ -37,6 +37,7 @@ try {
   process.exit(1);
 }
 const seeded = await seedIfEmpty();
+await migrateV2();
 // En desarrollo la API va fija en 3001 (Vite usa 5173 y le hace proxy); en producción usa PORT.
 const port = process.argv.includes('--dev') ? 3001 : Number(process.env.PORT) || 3001;
 app.listen(port, () => {
