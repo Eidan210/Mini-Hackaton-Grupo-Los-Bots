@@ -80,8 +80,9 @@ importan desde la pantalla.
 
 ## Acceso, roles y usuarios de prueba
 
-Cada persona entra con **correo y contraseña** (guardada con hash scrypt, con límite de intentos) y puede
-**registrarse**: queda como Camper y el administrador le asigna otro rol desde **Usuarios**. El rol sale siempre
+Cada persona **se registra con su propio correo y contraseña** (guardada con hash scrypt, con límite de
+intentos) y puede cambiarla desde su menú; nadie reparte contraseñas. El **primer usuario real que se registra
+queda como Administrador**; los siguientes entran como Camper y el administrador les asigna su rol desde **Usuarios**. El rol sale siempre
 del servidor y cada endpoint valida el permiso (un técnico que llame a una ruta de administrador recibe 403).
 
 | Rol | Qué puede hacer |
@@ -94,8 +95,9 @@ del servidor y cada endpoint valida el permiso (un técnico que llame a una ruta
 
 Usuarios de prueba (ficticios), todos `@campus.demo`: `valentina.rios` (Administrador), `andres.pineda`
 (Coordinador), `camila.duarte` (Técnico), `miguel.torres` (Trainer), `sofia.herrera` y `daniel.rojas` (Campers;
-Daniel tiene un préstamo vencido para demostrar R4). Su contraseña es la de la variable `SEED_PASSWORD`
-(no está en el repositorio). Con `DEMO_LOGIN=true` aparece además un acceso rápido por perfil para la presentación.
+Daniel tiene un préstamo vencido para demostrar R4). Estas cuentas no tienen contraseña conocida: se usan con
+el acceso rápido por perfil que aparece en el login cuando `DEMO_LOGIN=true` (pensado para la presentación).
+En desarrollo, `SEED_PASSWORD` (opcional) les asigna una contraseña para entrar también con correo.
 
 ## Instalación y ejecución
 
@@ -118,7 +120,7 @@ Variables de entorno (archivo `.env`, que **no** se sube a Git):
 | `NEMOTRON_BASE_URL` | Opcional. Por defecto `https://openrouter.ai/api/v1` (sirve también la API de NVIDIA) |
 | `DATABASE_URL` | Cadena de conexión de Supabase. Vacía = PostgreSQL embebido local |
 | `SESSION_SECRET` | Texto aleatorio para firmar las sesiones |
-| `SEED_PASSWORD` | Contraseña de los usuarios de prueba (se guarda con hash al iniciar). Sin ella se genera una y se muestra en la consola |
+| `SEED_PASSWORD` | Opcional, solo desarrollo: contraseña para las cuentas de prueba `@campus.demo` |
 | `DEMO_LOGIN` | Opcional. `true` muestra el acceso rápido por perfil en el login (solo para la demo) |
 
 **Producción** (un solo servicio): `npm install && npm run build` y luego `npm start`. Express sirve la API y
