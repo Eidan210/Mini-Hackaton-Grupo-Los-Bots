@@ -1,0 +1,14 @@
+codigo,nombre,tipo,capacidad,ubicacion,estado
+A-101,Aula A-101,Aula,30,Torre A · Piso 1,disponible
+A-102,Aula A-102,Aula,40,Torre A · Piso 1,disponible
+B-201,Aula B-201,Aula,25,Torre B · Piso 2,disponible
+B-202,Aula B-202,Aula,20,Torre B · Piso 2,mantenimiento
+LAB-1,Laboratorio de Cómputo 1,Laboratorio,35,Torre A · Piso 3,disponible
+LAB-2,Laboratorio de Cómputo 2,Laboratorio,30,Torre A · Piso 3,disponible
+AUD-1,Auditorio Principal,Auditorio,120,Bloque Central,disponible
+C-01,Cubículo C-01,Cubículo,4,Biblioteca,disponible
+C-02,Cubículo C-02,Cubículo,4,Biblioteca,disponible
+C-03,Cubículo C-03,Cubículo,6,Biblioteca,disponible
+C-04,Cubículo C-04,Cubículo,-5,Biblioteca,disponible
+A-101,Aula A-101 (duplicada),Aula,30,Torre A · Piso 1,disponible
+P-01,Piscina,Piscina,50,Exterior,disponible
