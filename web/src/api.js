@@ -49,7 +49,9 @@ export async function apiFetch(path, { method = 'GET', body } = {}) {
       status: res.status,
       code: e.code,
       rule: e.rule,
-      message: e.message || `Error ${res.status} del servidor`,
+      message: e.message || (res.status >= 502 && res.status <= 504
+        ? 'La API no responde. Revisa que el backend esté corriendo (npm run dev) y vuelve a intentar.'
+        : `Error ${res.status} del servidor`),
       details: e.details,
     });
   }
