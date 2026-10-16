@@ -79,3 +79,39 @@ Candidatos: ${candidates.map((c) => `${c.id}=${c.name} (${c.type}, capacidad ${c
     latencyMs: result.latencyMs,
   };
 }
+
+const askSchema = z.object({
+  answer: z.string().min(3).max(2000),
+  cited: z.array(z.string()).max(10).default([]),
+});
+
+/**
+ * Modo consulta para administración: responde preguntas sobre el estado de las incidencias
+ * usando SOLO los datos reales (incidencias + bitácora de los técnicos) que se le pasan.
+ */
+export async function responderSobreIncidencias({ question, incidents, notes }) {
+  const fmt = (d) => (d ? new Date(d).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '—');
+  const contexto = incidents.map((i) => {
+    const bitacora = notes.filter((n) => n.incident_id === i.id)
+      .map((n) => `    - ${fmt(n.created_at)} ${n.author_name}: ${n.text}`).join('\n') || '    - (sin avances registrados)';
+    return `${i.code} | ${i.title} | estado: ${i.status} | prioridad: ${i.priority} | área: ${i.area} | ` +
+      `lugar: ${i.space_name || '—'} | equipo: ${i.equipment_name || '—'} | técnico: ${i.assigned_name || 'sin asignar'} | ` +
+      `reportada: ${fmt(i.created_at)} por ${i.reported_by_name}${i.block_hasta ? ` | bloqueo hasta ${i.block_hasta}` : ''}\n  Bitácora:\n${bitacora}`;
+  }).join('\n');
+
+  const system = `Eres el asistente de operación del Campus Campuslands. Respondes a la administración sobre el estado
+de las incidencias usando ÚNICAMENTE los datos que aparecen abajo (incidencias y bitácora de los técnicos).
+Si algo no está en los datos, dilo claramente; no inventes avances, fechas ni personas.
+Responde en español, breve (máximo 8 líneas), priorizando lo urgente.
+Responde ÚNICAMENTE con JSON: {"answer": texto de la respuesta, "cited": [códigos INC-xxxx que mencionas]}`;
+  const user = `Pregunta: """${question}"""\n\nIncidencias (${incidents.length}):\n${contexto || '(no hay incidencias abiertas)'}`;
+
+  const result = await askJson({ system, user, schema: askSchema, temperature: 0.3 });
+  const codes = new Set(incidents.map((i) => i.code));
+  return {
+    answer: result.data.answer,
+    cited: result.data.cited.filter((c) => codes.has(c)),
+    model: result.model,
+    latencyMs: result.latencyMs,
+  };
+}
