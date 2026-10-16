@@ -64,7 +64,7 @@ mandar un equipo a revisión) las aplica el backend según las reglas, no la IA.
 | R4 | Máximo de préstamos activos por usuario y ninguno si tiene uno vencido | 2 |
 | R5 | Reservas dentro del horario, no en el pasado y con duración máxima; préstamos con horas máximas | 07:00–21:00, 4 h, 24 h |
 | R6 | Una incidencia Alta/Crítica bloquea el espacio y manda el equipo a revisión; al resolverse se liberan | Alta, Crítica |
-| R7 | Los campers solo reservan cubículos | cubiculo |
+| R7 | Los campers solo reservan cubículos | Cubiculo |
 
 **Cambio en vivo:** se edita `CONFIG` en `server/rules.js` (por ejemplo `reservas.maxHoras: 2`), se guarda y
 el servidor se reinicia solo con `npm run dev`. La pantalla **Reglas activas** muestra los valores vigentes.
