@@ -137,7 +137,7 @@ export default function Layout() {
         <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} />
       </aside>
       <MobileDrawer open={drawer} onClose={closeDrawer} />
-      <main className={`min-h-screen overflow-x-hidden px-3 pb-28 pt-20 transition-[padding] duration-200 sm:px-4 md:pb-24 md:pr-8 md:pt-24 ${collapsed ? 'md:pl-24' : 'md:pl-72'}`}>
+      <main className={`relative min-h-screen overflow-x-hidden px-3 pb-28 pt-20 transition-[padding] duration-200 sm:px-4 md:pb-24 md:pr-8 md:pt-24 ${collapsed ? 'md:pl-24' : 'md:pl-72'}`}>
         <div className="mx-auto max-w-6xl"><Outlet /></div>
       </main>
       {canAi && pathname !== '/incidencias' && (
