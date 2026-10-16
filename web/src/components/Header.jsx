@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LogOut, Menu } from 'lucide-react';
+import { KeyRound, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../auth.jsx';
 import { initials } from '../util.js';
 import Logo from './Logo.jsx';
 import NotificationsBell from './NotificationsBell.jsx';
+import ChangePasswordModal from './ChangePasswordModal.jsx';
 
 export default function Header({ onMenu }) {
   const { user, logout } = useAuth();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
   const ref = useRef(null);
   const buttonRef = useRef(null);
 
@@ -64,13 +66,17 @@ export default function Header({ onMenu }) {
               <p className="truncate font-semibold">{user?.name}</p>
               <p className="truncate text-xs text-mute">{user?.email}</p>
               <p className="text-xs text-mute">{user?.roleLabel}</p>
-              <button type="button" role="menuitem" onClick={logout} className="mt-3 flex w-full items-center gap-2 rounded-lg bg-btn px-3 py-2 text-sm hover:bg-[#5d5f69] active:bg-[#686a75]">
+              <button type="button" role="menuitem" onClick={() => { setOpen(false); setPwOpen(true); }} className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-white/10 active:bg-white/15">
+                <KeyRound className="h-4 w-4" aria-hidden="true" /> Cambiar contraseña
+              </button>
+              <button type="button" role="menuitem" onClick={logout} className="mt-1 flex w-full items-center gap-2 rounded-lg bg-btn px-3 py-2 text-sm hover:bg-[#5d5f69] active:bg-[#686a75]">
                 <LogOut className="h-4 w-4" aria-hidden="true" /> Cerrar sesión
               </button>
             </div>
           )}
         </div>
       </div>
+      <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} />
     </header>
   );
 }
