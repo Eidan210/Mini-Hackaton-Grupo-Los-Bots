@@ -1,7 +1,7 @@
 const TONES = {
-  ok: 'bg-ok/15 text-ok border-ok/30',
-  info: 'bg-info/15 text-info border-info/30',
-  bad: 'bg-bad/15 text-bad border-bad/30',
+  ok: 'bg-ok/15 text-[#6fe0a0] border-ok/30',
+  info: 'bg-info/15 text-[#8cb8ff] border-info/30',
+  bad: 'bg-bad/15 text-[#ff8a8d] border-bad/30',
   warn: 'bg-warn/15 text-warn border-warn/30',
   ai: 'bg-accent/20 text-[#b4abff] border-accent/40',
   neutral: 'bg-btn/60 text-ink border-line',

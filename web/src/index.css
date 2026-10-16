@@ -1,32 +1,74 @@
 @import "tailwindcss";
 
+/* ───────── Tokens de diseño ─────────
+   Superficies con diferencia clara entre fondo, tarjetas y elementos elevados. */
+:root {
+  --bg: #2b2d31;          /* fondo general */
+  --surface: #383a40;     /* tarjetas */
+  --surface-2: #404249;   /* hover / elementos elevados */
+  --sunken: #232428;      /* barras, inputs y zonas hundidas */
+  --border: #4a4d55;      /* borde de 1px de tarjetas e inputs */
+  --accent-glow: 124, 108, 255;
+}
+
 @theme {
   --font-sans: "Mona Sans", "Inter", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --color-canvas: #313338;
-  --color-panel: #2b2d31;
-  --color-card: #383a40;
-  --color-line: #404249;
   --color-btn: #4e5058;
   --color-ink: #dfe4e8;
-  --color-mute: #a1a7b0;
+  --color-mute: #adb3bc;
   --color-accent: #6d5dfc;
+  --color-accent-soft: #b4abff; /* acento para texto sobre superficies oscuras (contraste AA) */
   --color-ok: #23a55a;
   --color-info: #3b82f6;
   --color-bad: #f23f43;
   --color-warn: #f0b232;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px -8px rgba(0, 0, 0, 0.45);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 28px -10px rgba(0, 0, 0, 0.6);
+}
+
+/* Los colores de superficie leen las variables de :root */
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-card: var(--surface);
+  --color-card-2: var(--surface-2);
+  --color-panel: var(--sunken);
+  --color-line: var(--border);
 }
 
 html, body, #root { height: 100%; }
+html { scrollbar-width: thin; scrollbar-color: #5a5c65 transparent; }
 body {
   margin: 0;
-  background: var(--color-canvas);
+  background: var(--bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 :focus-visible { outline: 2px solid #9a8fff; outline-offset: 2px; }
 select, input, textarea { color-scheme: dark; }
+
+/* Textareas: sin redimensionar, altura fija y scroll interno cuando se llena */
+textarea { resize: none; overflow-y: auto; }
+
+/* ───────── Estados globales (capa base: los utilitarios de cada componente los refinan) ───────── */
+@layer base {
+  a[href], button:not(:disabled), summary, label[for], select:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]), [role="menuitem"], [role="tab"],
+  input[type="checkbox"]:not(:disabled), input[type="radio"]:not(:disabled), input[type="file"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled, select:disabled, input:disabled, textarea:disabled, [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+  a, button, input, select, textarea, summary, [role="menuitem"], [role="button"] {
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease,
+      box-shadow 150ms ease, opacity 150ms ease, transform 150ms ease;
+  }
+  button:not(:disabled):active, [role="button"]:not([aria-disabled="true"]):active { transform: translateY(1px); }
+  a[href]:not([class]):hover { text-decoration: underline; }
+  input:disabled, select:disabled, textarea:disabled { opacity: 0.55; }
+}
 
 .stripes {
   background-image: repeating-linear-gradient(135deg, rgba(161,167,176,.22) 0 6px, transparent 6px 12px);
@@ -35,3 +77,74 @@ select, input, textarea { color-scheme: dark; }
 .skeleton { background: #4e5058; border-radius: 6px; animation: shimmer 1.4s ease-in-out infinite; }
 @keyframes slidein { from { transform: translateX(100%) } to { transform: translateX(0) } }
 .slidein { animation: slidein .2s ease-out; }
+@keyframes popin { from { opacity: 0; transform: translateY(-4px) scale(.98) } to { opacity: 1; transform: none } }
+.popin { animation: popin .12s ease-out; }
+
+/* ───────── Fondo dinámico (login y área de contenido) ─────────
+   Degradado radial violeta que sigue al mouse (--x/--y las actualiza DynamicBackground con rAF)
+   y un campo de estrellas sutil hecho solo con CSS. */
+.dyn-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  --x: 50%;
+  --y: 30%;
+  --glow: 0.09;
+  --stars: 0.3;
+}
+.dyn-bg--login { --glow: 0.2; --stars: 0.65; }
+.dyn-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(560px circle at var(--x) var(--y), rgba(var(--accent-glow), var(--glow)), transparent 65%);
+}
+.dyn-bg__stars {
+  position: absolute;
+  inset: 0;
+  opacity: var(--stars);
+  background-repeat: repeat;
+  background-image:
+    radial-gradient(1.2px 1.2px at 24px 38px, #fff, transparent),
+    radial-gradient(1px 1px at 96px 210px, rgba(255,255,255,.85), transparent),
+    radial-gradient(1.4px 1.4px at 171px 96px, rgba(207,200,255,.95), transparent),
+    radial-gradient(1px 1px at 248px 258px, rgba(255,255,255,.8), transparent),
+    radial-gradient(1.2px 1.2px at 301px 31px, rgba(255,255,255,.9), transparent),
+    radial-gradient(1px 1px at 330px 176px, rgba(207,200,255,.85), transparent),
+    radial-gradient(1px 1px at 52px 307px, rgba(255,255,255,.7), transparent);
+  background-size: 360px 340px;
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+.dyn-bg__stars--far {
+  background-image:
+    radial-gradient(1px 1px at 61px 72px, rgba(255,255,255,.75), transparent),
+    radial-gradient(1.2px 1.2px at 187px 143px, rgba(207,200,255,.85), transparent),
+    radial-gradient(1px 1px at 119px 301px, rgba(255,255,255,.7), transparent),
+    radial-gradient(1px 1px at 271px 199px, rgba(255,255,255,.8), transparent),
+    radial-gradient(1.2px 1.2px at 388px 52px, rgba(255,255,255,.75), transparent);
+  background-size: 433px 377px;
+  animation-duration: 11s;
+  animation-delay: -4s;
+}
+@keyframes twinkle { from { opacity: calc(var(--stars) * .45) } to { opacity: var(--stars) } }
+@media (prefers-reduced-motion: reduce) {
+  .dyn-bg__stars, .dyn-bg__stars--far { animation: none; }
+  .slidein, .popin { animation: none; }
+}
+
+/* Pantalla de acceso: foto de fondo opcional (web/public/login-bg.jpg) bajo una capa oscura.
+   Si el archivo no existe, se ven los degradados de respaldo. */
+.login-bg {
+  background-color: #17181c;
+  background-image:
+    linear-gradient(rgba(16, 17, 22, 0.62), rgba(16, 17, 22, 0.82)),
+    url('/login-bg.jpg'),
+    radial-gradient(ellipse at 18% 8%, rgba(109, 93, 252, 0.4), transparent 55%),
+    radial-gradient(ellipse at 85% 95%, rgba(59, 130, 246, 0.18), transparent 50%),
+    linear-gradient(160deg, #1d1e32 0%, #232428 55%, #15161a 100%);
+  background-size: auto, cover, auto, auto, auto;
+  background-position: center;
+  background-repeat: no-repeat;
+}

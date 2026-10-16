@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 288 52" role="img" aria-labelledby="t">
+  <title id="t">Campuslands</title>
+  <!-- Logotipo tipográfico provisional de "campuslands": trazo monolínea redondeado, en blanco.
+       Se reemplaza por el archivo oficial de Campuslands conservando este mismo nombre. -->
+  <g fill="none" stroke="#ffffff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- c -->
+    <path d="M17.07 12.93A10 10 0 1 0 17.07 27.07"/>
+    <!-- a -->
+    <g transform="translate(28 0)"><circle cx="10" cy="20" r="10"/><path d="M20 10V30"/></g>
+    <!-- m -->
+    <g transform="translate(56 0)"><path d="M0 10V30M0 20A8 10 0 0 1 16 20V30M16 20A8 10 0 0 1 32 20V30"/></g>
+    <!-- p -->
+    <g transform="translate(96 0)"><circle cx="10" cy="20" r="10"/><path d="M0 10V40"/></g>
+    <!-- u -->
+    <g transform="translate(124 0)"><path d="M0 10V20A8 10 0 0 0 16 20M16 10V30"/></g>
+    <!-- s -->
+    <g transform="translate(148 0)"><path d="M16 13.2C14.6 11.2 12.4 10 9.5 10C6 10 3.2 11.8 3.2 14.5C3.2 17.4 6.2 18.4 9.5 19.5C13 20.6 16.2 21.8 16.2 25.2C16.2 28.2 13.4 30 9.8 30C6.8 30 4.2 28.9 2.8 26.8"/></g>
+    <!-- l -->
+    <g transform="translate(172 0)"><path d="M0 0V30"/></g>
+    <!-- a -->
+    <g transform="translate(180 0)"><circle cx="10" cy="20" r="10"/><path d="M20 10V30"/></g>
+    <!-- n -->
+    <g transform="translate(208 0)"><path d="M0 10V30M0 20A8 10 0 0 1 16 20V30"/></g>
+    <!-- d -->
+    <g transform="translate(232 0)"><circle cx="10" cy="20" r="10"/><path d="M20 0V30"/></g>
+    <!-- s -->
+    <g transform="translate(260 0)"><path d="M16 13.2C14.6 11.2 12.4 10 9.5 10C6 10 3.2 11.8 3.2 14.5C3.2 17.4 6.2 18.4 9.5 19.5C13 20.6 16.2 21.8 16.2 25.2C16.2 28.2 13.4 30 9.8 30C6.8 30 4.2 28.9 2.8 26.8"/></g>
+  </g>
+</svg>
