@@ -31,14 +31,28 @@ Espacio seleccionado por el usuario: ${space ? `${space.id} (${space.name})` : '
 Equipo seleccionado por el usuario: ${equipment ? `${equipment.id} (${equipment.name}, ${equipment.code})` : 'ninguno'}
 Catálogo de espacios: ${spaces.map((s) => `${s.id}=${s.name} [${s.code}]`).join('; ')}
 Catálogo de equipos: ${equipmentList.map((e) => `${e.id}=${e.name} [${e.code}]`).join('; ')}
-Si el usuario seleccionó un espacio o equipo, úsalo. Si el texto menciona uno del catálogo, usa su id. Si no, null.`;
+Si el usuario seleccionó un espacio o equipo, úsalo. Si el texto menciona uno del catálogo (por nombre o código entre corchetes),
+devuelve su id, que es el texto ANTES del signo "=" (por ejemplo "a-102" o "pr-103"). Si no menciona ninguno, null.`;
 
   const result = await askJson({ system, user, schema: triageSchema });
   // Control de respuesta: ids que no existen en el catálogo se descartan.
   const a = result.data;
-  a.spaceId = space?.id || (spaces.some((s) => s.id === a.spaceId) ? a.spaceId : null);
-  a.equipmentId = equipment?.id || (equipmentList.some((e) => e.id === a.equipmentId) ? a.equipmentId : null);
+  a.spaceId = space?.id || matchCatalog(spaces, a.spaceId) || mentionedCode(spaces, description);
+  a.equipmentId = equipment?.id || matchCatalog(equipmentList, a.equipmentId) || mentionedCode(equipmentList, description);
   return result;
+}
+
+/** Acepta el id o el código que haya devuelto la IA, si existe en el catálogo. */
+function matchCatalog(list, value) {
+  if (!value) return null;
+  const v = String(value).trim().toLowerCase();
+  return list.find((x) => x.id?.toLowerCase() === v || x.code?.toLowerCase() === v)?.id || null;
+}
+
+/** Si el texto cita exactamente un código del catálogo (p. ej. "PR-103"), lo enlaza. */
+function mentionedCode(list, text) {
+  const found = list.filter((x) => x.code && new RegExp(`(^|[^\\w-])${x.code}($|[^\\w-])`, 'i').test(text || ''));
+  return found.length === 1 ? found[0].id : null;
 }
 
 const recommendSchema = z.object({
