@@ -49,16 +49,28 @@ publicRouter.post('/auth/register', async (req, res) => {
     password: z.string().min(8, 'la contraseña debe tener al menos 8 caracteres').max(200),
   }).parse(req.body);
   checkRateLimit(`registro|${req.ip}`);
-  const { rows: existe } = await query('SELECT 1 FROM users WHERE lower(email) = $1', [body.email]);
-  if (existe.length) throw new HttpError(409, 'EMAIL_EXISTE', 'Ya existe una cuenta con ese correo.');
+  if (body.email.endsWith('@campus.demo')) {
+    throw new HttpError(400, 'EMAIL_RESERVADO', 'Ese dominio está reservado para las cuentas de prueba. Usa tu propio correo.');
+  }
+  const passwordHash = await hashPassword(body.password);
   const id = `u-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  const { rows } = await query(
-    'INSERT INTO users (id, name, email, role, password_hash) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-    [id, body.name, body.email, ROL_REGISTRO, await hashPassword(body.password)],
-  );
+  const user = await tx(async ({ query: q }) => {
+    await q('SELECT pg_advisory_xact_lock(7302)'); // dos registros simultáneos no pueden ser ambos "el primero"
+    const { rows: existe } = await q('SELECT 1 FROM users WHERE lower(email) = $1', [body.email]);
+    if (existe.length) throw new HttpError(409, 'EMAIL_EXISTE', 'Ya existe una cuenta con ese correo.');
+    // Arranque: si aún no hay ninguna cuenta real (las @campus.demo son de prueba), quien se registra primero
+    // queda como Administrador y desde "Usuarios" asigna el rol a los demás. Nadie reparte contraseñas.
+    const { rows: reales } = await q(`SELECT count(*)::int AS n FROM users WHERE email NOT LIKE '%@campus.demo'`);
+    const role = reales[0].n === 0 ? 'admin' : ROL_REGISTRO;
+    const { rows } = await q(
+      'INSERT INTO users (id, name, email, role, password_hash) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+      [id, body.name, body.email, role, passwordHash],
+    );
+    await logActivity(q, 'usuario', `Nuevo usuario registrado: ${body.name} (${ROLES[role]})`, id);
+    return rows[0];
+  });
   registerFailure(`registro|${req.ip}`); // limita la creación masiva de cuentas desde una misma IP
-  await logActivity(query, 'usuario', `Nuevo usuario registrado: ${body.name} (${ROLES[ROL_REGISTRO]})`, id);
-  res.status(201).json({ token: createToken(id), user: publicUser(rows[0]) });
+  res.status(201).json({ token: createToken(id), user: publicUser(user) });
 });
 
 // Acceso rápido de demostración: solo existe si DEMO_LOGIN=true.
@@ -80,6 +92,23 @@ publicRouter.post('/auth/demo', async (req, res) => {
 router.use(requireAuth);
 
 router.get('/auth/me', (req, res) => res.json({ user: publicUser(req.user) }));
+
+// Cada usuario cambia su propia contraseña (pide la actual).
+router.patch('/auth/password', async (req, res) => {
+  const body = z.object({
+    currentPassword: z.string().min(1, 'escribe tu contraseña actual').max(200),
+    newPassword: z.string().min(8, 'la nueva contraseña debe tener al menos 8 caracteres').max(200),
+  }).parse(req.body);
+  const key = `cambio|${req.user.id}`;
+  checkRateLimit(key);
+  if (!(await verifyPassword(body.currentPassword, req.user.password_hash))) {
+    registerFailure(key);
+    throw new HttpError(400, 'CLAVE_ACTUAL', 'La contraseña actual no es correcta.');
+  }
+  clearFailures(key);
+  await query('UPDATE users SET password_hash = $2 WHERE id = $1', [req.user.id, await hashPassword(body.newPassword)]);
+  res.json({ ok: true });
+});
 
 // ---------- usuarios ----------
 router.get('/users', async (req, res) => {

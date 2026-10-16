@@ -82,21 +82,19 @@ export async function migrateV2() {
   const { hashPassword, verifyPassword } = await import('./auth.js');
   const { fechaLiberacion } = await import('./rules.js');
 
-  // Usuarios de prueba (@campus.demo): SEED_PASSWORD manda. Si cambia, se vuelve a aplicar.
+  // Cuentas de prueba (@campus.demo): no tienen contraseña conocida; se usan con el acceso rápido (DEMO_LOGIN=true).
+  // Opcional: SEED_PASSWORD les pone una contraseña para entrar con correo (útil en desarrollo).
   const seedPassword = process.env.SEED_PASSWORD;
   const { rows: demo } = await query(`SELECT id, password_hash FROM users WHERE email LIKE '%@campus.demo'`);
-  let generated = null;
   for (const u of demo) {
     if (seedPassword) {
       if (!(await verifyPassword(seedPassword, u.password_hash))) {
         await query('UPDATE users SET password_hash = $2 WHERE id = $1', [u.id, await hashPassword(seedPassword)]);
       }
     } else if (!u.password_hash) {
-      generated ||= randomBytes(6).toString('base64url');
-      await query('UPDATE users SET password_hash = $2 WHERE id = $1', [u.id, await hashPassword(generated)]);
+      await query('UPDATE users SET password_hash = $2 WHERE id = $1', [u.id, await hashPassword(randomBytes(24).toString('hex'))]);
     }
   }
-  if (generated) console.warn(`[seed] SEED_PASSWORD no está definida. Contraseña generada para los usuarios de prueba: ${generated}`);
 
   await tx(async ({ query: q }) => {
     // Evita que dos instancias del servidor migren a la vez (pasó al arrancar dos procesos juntos).
