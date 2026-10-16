@@ -1,0 +1,14 @@
+codigo,nombre,categoria,ubicacion,estado
+LP-001,Computador portátil Lenovo ThinkPad,Portátil,Biblioteca,disponible
+LP-002,Computador portátil Lenovo ThinkPad,Portátil,Lab. Cómputo 1,disponible
+LP-003,Computador portátil Dell Latitude,Portátil,Lab. Cómputo 2,disponible
+LP-004,Computador portátil Dell Latitude,Portátil,Lab. Cómputo 2,disponible
+PR-101,Proyector Epson EB-X51,Proyector,Aula A-101,disponible
+PR-102,Proyector Epson EB-X51,Proyector,Lab. Cómputo 2,dañado
+PR-103,Proyector BenQ MW560,Proyector,Aula A-102,disponible
+TB-015,Tablet Samsung Galaxy Tab A9,Tablet,Dirección TIC,disponible
+TB-016,Tablet Samsung Galaxy Tab A9,Tablet,Soporte Técnico,en revisión
+AU-001,Kit de micrófonos inalámbricos,Audio,Auditorio Principal,disponible
+RT-001,Router de respaldo TP-Link,Red,Dirección TIC,disponible
+LP-099,Computador portátil HP,Portátil,Biblioteca,prestado
+XX-001,Equipo sin categoría,,Bodega,disponible
