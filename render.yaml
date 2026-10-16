@@ -17,8 +17,6 @@ services:
         generateValue: true
       - key: NEMOTRON_API_KEY
         sync: false
-      - key: SEED_PASSWORD
-        sync: false
       - key: DEMO_LOGIN
         value: "false"
       - key: DATABASE_URL

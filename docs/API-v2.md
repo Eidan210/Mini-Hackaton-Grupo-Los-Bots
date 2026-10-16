@@ -9,7 +9,8 @@ Formato de error igual: `{ error: { code, message, rule?, details? } }`.
 |---|---|---|---|
 | GET | `/auth/config` | | `{ demoLogin: bool }` (si es true existe el acceso rápido de demostración) |
 | POST | `/auth/login` | `{ email, password }` | `{ token, user }` · `401 CREDENCIALES` "Correo o contraseña incorrectos." · `429 DEMASIADOS_INTENTOS` |
-| POST | `/auth/register` | `{ name, email, password }` (password ≥ 8) | `201 { token, user }` con rol `camper` · `409 EMAIL_EXISTE` |
+| POST | `/auth/register` | `{ name, email, password }` (password ≥ 8) | `201 { token, user }` con rol `camper` (el primer usuario real queda `admin`) · `409 EMAIL_EXISTE` |
+| PATCH | `/auth/password` | `{ currentPassword, newPassword }` | `{ ok: true }` · `400 CLAVE_ACTUAL` |
 | GET | `/auth/users` | | solo si `demoLogin`: perfiles demo (como antes). Si no, `404`. |
 | POST | `/auth/demo` | `{ userId }` | solo si `demoLogin`: `{ token, user }` |
 | GET | `/auth/me` | | `{ user }` |
