@@ -1,0 +1,21 @@
+# Despliegue en Render (plan gratuito): un solo servicio que sirve la API y el frontend.
+# Las claves (NEMOTRON_API_KEY, DATABASE_URL) se cargan en el panel de Render, nunca aquí.
+services:
+  - type: web
+    name: campuscontrol
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: TZ
+        value: America/Bogota
+      - key: NODE_VERSION
+        value: "24"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: NEMOTRON_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
