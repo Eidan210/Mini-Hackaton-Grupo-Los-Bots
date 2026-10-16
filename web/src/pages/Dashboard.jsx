@@ -31,7 +31,7 @@ function Kpi({ icon: Icon, tone, value, label, sub, subTone }) {
       <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: `${tone}26`, color: tone }}>
         <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
-      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-2xl font-bold sm:text-3xl">{value}</p>
       <p className="mt-1 text-xs text-mute">{label}</p>
       {sub && <p className="mt-0.5 text-xs font-medium" style={{ color: subTone || tone }}>{sub}</p>}
     </Card>
@@ -136,7 +136,7 @@ function GlobalView({ data, can }) {
           <Link to="/datos" className="font-semibold underline">Revisar datos importados</Link>
         </Alert>
       )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Kpi icon={Building2} tone="#23A55A" value={`${k.spacesAvailable}/${k.spacesTotal}`} label="Aulas disponibles" />
         <Kpi icon={Laptop} tone="#3B82F6" value={`${k.equipmentLent}/${k.equipmentTotal}`} label="Equipos prestados" />
         <Kpi icon={AlertTriangle} tone="#F0B232" value={k.incidentsOpen} label="Incidencias abiertas" sub={`${k.incidentsHigh} de alta prioridad`} />
@@ -204,7 +204,7 @@ function PersonalView({ data }) {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
         <Kpi icon={CalendarCheck} tone="#8E81FF" value={k.myBookingsToday ?? 0} label="Mis reservas hoy" />
         <Kpi icon={CalendarClock} tone="#3B82F6" value={k.myUpcomingBookings ?? 0} label="Reservas próximas" />
         <Kpi
