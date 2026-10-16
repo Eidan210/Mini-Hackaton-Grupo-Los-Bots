@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Mona Sans", "Inter", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --color-canvas: #313338;
+  --color-panel: #2b2d31;
+  --color-card: #383a40;
+  --color-line: #404249;
+  --color-btn: #4e5058;
+  --color-ink: #dfe4e8;
+  --color-mute: #a1a7b0;
+  --color-accent: #6d5dfc;
+  --color-ok: #23a55a;
+  --color-info: #3b82f6;
+  --color-bad: #f23f43;
+  --color-warn: #f0b232;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid #9a8fff; outline-offset: 2px; }
+select, input, textarea { color-scheme: dark; }
+
+.stripes {
+  background-image: repeating-linear-gradient(135deg, rgba(161,167,176,.22) 0 6px, transparent 6px 12px);
+}
+@keyframes shimmer { 0% { opacity: .35 } 50% { opacity: .7 } 100% { opacity: .35 } }
+.skeleton { background: #4e5058; border-radius: 6px; animation: shimmer 1.4s ease-in-out infinite; }
+@keyframes slidein { from { transform: translateX(100%) } to { transform: translateX(0) } }
+.slidein { animation: slidein .2s ease-out; }
