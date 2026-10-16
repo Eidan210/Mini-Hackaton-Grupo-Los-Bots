@@ -83,3 +83,46 @@ CREATE TABLE IF NOT EXISTS activity (
   message     TEXT NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ===== v2: login real, bloqueos con fecha, bitácora, notificaciones, reglas activables =====
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_seen_at TIMESTAMPTZ NOT NULL DEFAULT to_timestamp(0);
+
+CREATE TABLE IF NOT EXISTS space_blocks (
+  id           SERIAL PRIMARY KEY,
+  space_id     TEXT NOT NULL REFERENCES spaces(id),
+  tipo         TEXT NOT NULL CHECK (tipo IN ('mantenimiento','bloqueo')),
+  desde        TEXT NOT NULL,
+  hasta        TEXT NOT NULL,
+  motivo       TEXT NOT NULL DEFAULT '',
+  incident_id  INTEGER REFERENCES incidents(id),
+  activo       BOOLEAN NOT NULL DEFAULT true,
+  created_by   TEXT REFERENCES users(id),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS space_blocks_space ON space_blocks (space_id, activo);
+
+ALTER TABLE incidents ADD COLUMN IF NOT EXISTS assigned_to TEXT REFERENCES users(id);
+ALTER TABLE incidents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+CREATE TABLE IF NOT EXISTS incident_notes (
+  id           SERIAL PRIMARY KEY,
+  incident_id  INTEGER NOT NULL REFERENCES incidents(id),
+  author_id    TEXT NOT NULL REFERENCES users(id),
+  text         TEXT NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE import_errors ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pendiente';
+ALTER TABLE import_errors ADD COLUMN IF NOT EXISTS reviewed_by TEXT REFERENCES users(id);
+ALTER TABLE import_errors ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE import_errors ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+
+ALTER TABLE activity ADD COLUMN IF NOT EXISTS user_id TEXT REFERENCES users(id);
+ALTER TABLE activity ADD COLUMN IF NOT EXISTS target_user_id TEXT REFERENCES users(id);
+
+CREATE TABLE IF NOT EXISTS rule_state (
+  id      TEXT PRIMARY KEY,
+  activa  BOOLEAN NOT NULL DEFAULT true
+);

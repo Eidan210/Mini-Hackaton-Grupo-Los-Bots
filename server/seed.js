@@ -2,6 +2,7 @@
 // Solo se ejecuta si la base está vacía. Los CSV incluyen filas inconsistentes a propósito
 // para demostrar que el importador las rechaza sin romper nada.
 import { readFile } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { query, tx, logActivity } from './db.js';
@@ -71,4 +72,55 @@ export async function seedIfEmpty() {
     await logActivity(q, 'reserva', 'Reserva de Aula A-102 para "Proyecto final · Cohorte 5"');
   });
   return true;
+}
+
+/**
+ * Migración v2 (idempotente): contraseñas para los usuarios de prueba, estados globales de espacio
+ * convertidos en bloqueos con fecha y técnico asignado en las incidencias en curso.
+ */
+export async function migrateV2() {
+  const { hashPassword, verifyPassword } = await import('./auth.js');
+  const { fechaLiberacion } = await import('./rules.js');
+
+  // Usuarios de prueba (@campus.demo): SEED_PASSWORD manda. Si cambia, se vuelve a aplicar.
+  const seedPassword = process.env.SEED_PASSWORD;
+  const { rows: demo } = await query(`SELECT id, password_hash FROM users WHERE email LIKE '%@campus.demo'`);
+  let generated = null;
+  for (const u of demo) {
+    if (seedPassword) {
+      if (!(await verifyPassword(seedPassword, u.password_hash))) {
+        await query('UPDATE users SET password_hash = $2 WHERE id = $1', [u.id, await hashPassword(seedPassword)]);
+      }
+    } else if (!u.password_hash) {
+      generated ||= randomBytes(6).toString('base64url');
+      await query('UPDATE users SET password_hash = $2 WHERE id = $1', [u.id, await hashPassword(generated)]);
+    }
+  }
+  if (generated) console.warn(`[seed] SEED_PASSWORD no está definida. Contraseña generada para los usuarios de prueba: ${generated}`);
+
+  await tx(async ({ query: q }) => {
+    // Evita que dos instancias del servidor migren a la vez (pasó al arrancar dos procesos juntos).
+    await q('SELECT pg_advisory_xact_lock(7300)');
+    // Limpieza: bloqueos duplicados idénticos que dejó esa carrera.
+    await q(`UPDATE space_blocks b SET activo = false
+             WHERE b.activo AND EXISTS (SELECT 1 FROM space_blocks o WHERE o.activo AND o.id < b.id AND o.space_id = b.space_id
+               AND o.tipo = b.tipo AND o.desde = b.desde AND o.hasta = b.hasta AND o.motivo = b.motivo
+               AND o.incident_id IS NOT DISTINCT FROM b.incident_id)`);
+    const hoy = localDate(0);
+    const { rows: spaces } = await q(`SELECT * FROM spaces WHERE status <> 'disponible'`);
+    for (const s of spaces) {
+      const { rows: inc } = await q(
+        `SELECT id, code, title, priority, created_at FROM incidents
+         WHERE space_id = $1 AND status <> 'resuelta' ORDER BY created_at DESC LIMIT 1`, [s.id]);
+      const tipo = s.status === 'mantenimiento' ? 'mantenimiento' : 'bloqueo';
+      const desde = inc[0] ? new Date(inc[0].created_at).toLocaleDateString('en-CA') : hoy;
+      const hasta = tipo === 'mantenimiento' ? localDate(7) : fechaLiberacion(inc[0]?.priority || 'Alta', desde);
+      const motivo = inc[0] ? `${inc[0].code} · ${inc[0].title}` : 'Mantenimiento programado';
+      await q('INSERT INTO space_blocks (space_id, tipo, desde, hasta, motivo, incident_id) VALUES ($1,$2,$3,$4,$5,$6)',
+        [s.id, tipo, desde, hasta, motivo, inc[0]?.id || null]);
+      await q(`UPDATE spaces SET status = 'disponible' WHERE id = $1`, [s.id]);
+    }
+    await q(`UPDATE incidents SET assigned_to = 'u-tecnico'
+             WHERE assigned_to IS NULL AND status = 'en_progreso' AND EXISTS (SELECT 1 FROM users WHERE id = 'u-tecnico')`);
+  });
 }

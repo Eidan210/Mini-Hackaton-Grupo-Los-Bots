@@ -68,6 +68,7 @@ export async function connect() {
 export const query = (text, params = []) => driver.query(text, params);
 export const tx = (fn) => driver.tx(fn);
 
-export async function logActivity(q, type, message) {
-  await q('INSERT INTO activity (type, message) VALUES ($1, $2)', [type, message]);
+/** Registra un evento (alimenta "Actividad reciente" y las notificaciones). */
+export async function logActivity(q, type, message, userId = null, targetUserId = null) {
+  await q('INSERT INTO activity (type, message, user_id, target_user_id) VALUES ($1, $2, $3, $4)', [type, message, userId, targetUserId]);
 }
