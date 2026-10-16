@@ -27,6 +27,8 @@ const STATUS = {
   resuelta: ['ok', 'Resuelta'],
   activo: ['info', 'Activo'],
   devuelto: ['ok', 'Devuelto'],
+  confirmada: ['ok', 'Confirmada'],
+  cancelada: ['neutral', 'Cancelada'],
 };
 
 export function StatusChip({ status }) {
