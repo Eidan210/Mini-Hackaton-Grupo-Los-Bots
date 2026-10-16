@@ -6,6 +6,10 @@ import {
   validarPrestamo,
   prioridadBloquea,
   consecuenciaIncidencia,
+  fechaLiberacion,
+  bloqueoEnFecha,
+  PERMISOS,
+  tienePermiso,
 } from '../server/rules.js';
 
 const FECHA_FUTURA = '2099-01-15';
@@ -650,6 +654,138 @@ describe('Reglas de Negocio - rules.js', () => {
       assert.match(mensaje, /Pantalla Táctil/);
       assert.match(mensaje, /quedará bloqueado/);
       assert.match(mensaje, /pasará a revisión/);
+    });
+  });
+
+  describe('Novedades server/rules.js', () => {
+    describe('(1) fechaLiberacion', () => {
+      it('fechaLiberacion("Alta","2026-10-16") = "2026-10-17" y "Crítica" = "2026-10-19"', () => {
+        assert.equal(fechaLiberacion('Alta', '2026-10-16'), '2026-10-17');
+        assert.equal(fechaLiberacion('Crítica', '2026-10-16'), '2026-10-19');
+      });
+    });
+
+    describe('(2) bloqueoEnFecha', () => {
+      const bloqueoActivo = {
+        id: 'blk-1',
+        desde: '2099-01-10',
+        hasta: '2099-01-20',
+        motivo: 'INC-1',
+        activo: true,
+      };
+      const bloqueoInactivo = {
+        id: 'blk-2',
+        desde: '2099-01-10',
+        hasta: '2099-01-20',
+        motivo: 'INC-2',
+        activo: false,
+      };
+
+      it('bloqueoEnFecha devuelve el bloqueo que cubre la fecha (bordes desde y hasta incluidos)', () => {
+        assert.deepEqual(bloqueoEnFecha([bloqueoActivo], '2099-01-10'), bloqueoActivo);
+        assert.deepEqual(bloqueoEnFecha([bloqueoActivo], '2099-01-20'), bloqueoActivo);
+        assert.deepEqual(bloqueoEnFecha([bloqueoActivo], '2099-01-15'), bloqueoActivo);
+      });
+
+      it('devuelve null fuera del rango', () => {
+        assert.equal(bloqueoEnFecha([bloqueoActivo], '2099-01-09'), null);
+        assert.equal(bloqueoEnFecha([bloqueoActivo], '2099-01-21'), null);
+      });
+
+      it('devuelve null si activo === false', () => {
+        assert.equal(bloqueoEnFecha([bloqueoInactivo], '2099-01-15'), null);
+        assert.equal(bloqueoEnFecha([bloqueoInactivo], '2099-01-10'), null);
+        assert.equal(bloqueoEnFecha([bloqueoInactivo], '2099-01-20'), null);
+      });
+    });
+
+    describe('(3) validarReserva con espacio bloqueado y block', () => {
+      it('validarReserva con space.status "bloqueado" y space.block devuelve R3 y el mensaje incluye "hasta el 2099-01-20"', () => {
+        const espacioBloqueado = {
+          ...espacioBase,
+          status: 'bloqueado',
+          block: { hasta: '2099-01-20', motivo: 'INC-1' },
+        };
+        const request = {
+          date: '2099-01-15',
+          startTime: '10:00',
+          endTime: '12:00',
+          attendees: 5,
+        };
+        const resultado = validarReserva({
+          space: espacioBloqueado,
+          request,
+          bookings: [],
+          user: usuarioTrainer,
+          now: NOW_FIJO,
+        });
+
+        assert.ok(resultado);
+        assert.equal(resultado.rule, 'R3');
+        assert.ok(resultado.message.includes('hasta el 2099-01-20'));
+      });
+    });
+
+    describe('(4) Parámetro activas', () => {
+      it('con activas Set sin R2 una reserva que excede el aforo pasa (null)', () => {
+        const requestExcedeAforo = {
+          date: '2099-01-15',
+          startTime: '10:00',
+          endTime: '12:00',
+          attendees: 50,
+        };
+        const activas = new Set(['R1', 'R3', 'R4', 'R5', 'R6', 'R7']);
+        const resultado = validarReserva({
+          space: espacioBase,
+          request: requestExcedeAforo,
+          bookings: [],
+          user: usuarioTrainer,
+          now: NOW_FIJO,
+          activas,
+        });
+
+        assert.equal(resultado, null);
+      });
+
+      it('validarPrestamo de un equipo "prestado" sigue fallando con R3 aunque activas no incluya R3', () => {
+        const equipoPrestado = {
+          id: 'eq-prestado',
+          name: 'Laptop Dell',
+          code: 'LAP-001',
+          status: 'prestado',
+        };
+        const activasSinR3 = new Set(['R1', 'R2', 'R4', 'R5', 'R6', 'R7']);
+        const resultado = validarPrestamo({
+          equipment: equipoPrestado,
+          hours: 2,
+          prestamosActivos: [],
+          now: NOW_FIJO,
+          activas: activasSinR3,
+        });
+
+        assert.ok(resultado);
+        assert.equal(resultado.rule, 'R3');
+      });
+    });
+
+    describe('(5) prioridadBloquea', () => {
+      it('prioridadBloquea("Alta", new Set(["R1"])) es false', () => {
+        assert.equal(prioridadBloquea('Alta', new Set(['R1'])), false);
+      });
+    });
+
+    describe('(6) PERMISOS', () => {
+      it('admin no tiene "reportar_incidencia" y sí "gestionar_reglas"', () => {
+        assert.equal(PERMISOS.admin.includes('reportar_incidencia'), false);
+        assert.equal(PERMISOS.admin.includes('gestionar_reglas'), true);
+        assert.equal(tienePermiso('admin', 'reportar_incidencia'), false);
+        assert.equal(tienePermiso('admin', 'gestionar_reglas'), true);
+      });
+
+      it('camper no tiene "ver_panel_global"', () => {
+        assert.equal(PERMISOS.camper.includes('ver_panel_global'), false);
+        assert.equal(tienePermiso('camper', 'ver_panel_global'), false);
+      });
     });
   });
 });
