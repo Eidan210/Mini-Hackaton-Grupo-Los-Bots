@@ -79,10 +79,14 @@ textarea { resize: none; overflow-y: auto; }
 .slidein { animation: slidein .2s ease-out; }
 @keyframes popin { from { opacity: 0; transform: translateY(-4px) scale(.98) } to { opacity: 1; transform: none } }
 .popin { animation: popin .12s ease-out; }
+@keyframes drawer-in { from { transform: translateX(-100%) } to { transform: translateX(0) } }
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+.drawer-in { animation: drawer-in .2s ease-out; }
+.drawer-fade { animation: fade-in .2s ease-out; }
 
 /* ───────── Fondo dinámico (login y área de contenido) ─────────
    Degradado radial violeta que sigue al mouse (--x/--y las actualiza DynamicBackground con rAF)
-   y un campo de estrellas sutil hecho solo con CSS. */
+   y estrellas que caen despacio, dibujadas en un canvas (ver DynamicBackground.jsx). */
 .dyn-bg {
   position: fixed;
   inset: 0;
@@ -101,37 +105,9 @@ textarea { resize: none; overflow-y: auto; }
   inset: 0;
   background: radial-gradient(560px circle at var(--x) var(--y), rgba(var(--accent-glow), var(--glow)), transparent 65%);
 }
-.dyn-bg__stars {
-  position: absolute;
-  inset: 0;
-  opacity: var(--stars);
-  background-repeat: repeat;
-  background-image:
-    radial-gradient(1.2px 1.2px at 24px 38px, #fff, transparent),
-    radial-gradient(1px 1px at 96px 210px, rgba(255,255,255,.85), transparent),
-    radial-gradient(1.4px 1.4px at 171px 96px, rgba(207,200,255,.95), transparent),
-    radial-gradient(1px 1px at 248px 258px, rgba(255,255,255,.8), transparent),
-    radial-gradient(1.2px 1.2px at 301px 31px, rgba(255,255,255,.9), transparent),
-    radial-gradient(1px 1px at 330px 176px, rgba(207,200,255,.85), transparent),
-    radial-gradient(1px 1px at 52px 307px, rgba(255,255,255,.7), transparent);
-  background-size: 360px 340px;
-  animation: twinkle 7s ease-in-out infinite alternate;
-}
-.dyn-bg__stars--far {
-  background-image:
-    radial-gradient(1px 1px at 61px 72px, rgba(255,255,255,.75), transparent),
-    radial-gradient(1.2px 1.2px at 187px 143px, rgba(207,200,255,.85), transparent),
-    radial-gradient(1px 1px at 119px 301px, rgba(255,255,255,.7), transparent),
-    radial-gradient(1px 1px at 271px 199px, rgba(255,255,255,.8), transparent),
-    radial-gradient(1.2px 1.2px at 388px 52px, rgba(255,255,255,.75), transparent);
-  background-size: 433px 377px;
-  animation-duration: 11s;
-  animation-delay: -4s;
-}
-@keyframes twinkle { from { opacity: calc(var(--stars) * .45) } to { opacity: var(--stars) } }
+.dyn-bg__canvas { position: absolute; inset: 0; display: block; }
 @media (prefers-reduced-motion: reduce) {
-  .dyn-bg__stars, .dyn-bg__stars--far { animation: none; }
-  .slidein, .popin { animation: none; }
+  .slidein, .popin, .drawer-in, .drawer-fade { animation: none; }
 }
 
 /* Pantalla de acceso: foto de fondo opcional (web/public/login-bg.jpg) bajo una capa oscura.

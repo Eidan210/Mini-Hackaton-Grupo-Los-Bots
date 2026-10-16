@@ -16,6 +16,8 @@ import { useToast } from '../components/Toast.jsx';
 import SpaceRow from '../features/SpaceRow.jsx';
 import SpaceBlockModal from '../features/SpaceBlockModal.jsx';
 import SpacesLegend from '../features/SpacesLegend.jsx';
+import SpaceAgendaCard from '../features/SpaceAgendaCard.jsx';
+import DateStrip from '../features/DateStrip.jsx';
 import { SPACE_TYPES, SPACE_TYPE_KEYS } from '../features/spaceTypes.js';
 import { HOURS, SLOTS, START, END } from '../features/timeline.js';
 
@@ -23,10 +25,10 @@ const TYPES = [['', 'Todos'], ...SPACE_TYPE_KEYS.map((k) => [k, SPACE_TYPES[k].p
 const hhmm = (min) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 
 // ---- Formulario de reserva + sugerencia de IA ----
-function BookingForm({ spaces, date, onDone, onClose }) {
+function BookingForm({ spaces, date, initialSpaceId, onDone, onClose }) {
   const toast = useToast();
   const [form, setForm] = useState({
-    spaceId: spaces[0]?.id ?? '', title: '', date, startTime: '09:00', endTime: '10:00', attendees: 10,
+    spaceId: initialSpaceId || spaces[0]?.id || '', title: '', date, startTime: '09:00', endTime: '10:00', attendees: 10,
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -114,6 +116,7 @@ export default function Spaces() {
   const [date, setDate] = useState(todayStr());
   const [type, setType] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+  const [formSpaceId, setFormSpaceId] = useState(null); // espacio preseleccionado al reservar desde una tarjeta
   const [toCancel, setToCancel] = useState(null);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [blockTarget, setBlockTarget] = useState(null); // espacio al que se le programa un bloqueo
@@ -123,6 +126,9 @@ export default function Spaces() {
 
   const spaces = useMemo(() => (data || []).filter((s) => !type || s.type === type), [data, type]);
   const canBlock = can('cambiar_estado_recurso');
+  const canCancel = (b) => b.organizer_id === user?.id || ['admin', 'coordinador'].includes(user?.role);
+  const openForm = (spaceId = null) => { setFormSpaceId(spaceId); setFormOpen(true); };
+  const schedule = (sp) => { setActionError(null); setBlockTarget(sp); };
 
   async function confirmCancel() {
     setCancelBusy(true);
@@ -158,12 +164,22 @@ export default function Spaces() {
     <>
       <PageHeader title="Espacios" subtitle={`Disponibilidad por hora, de ${hhmm(START)} a ${hhmm(END)}`}>
         {can('reservar') && (
-          <Button variant="primary" onClick={() => setFormOpen(true)} disabled={!data?.length}><Plus className="h-4 w-4" aria-hidden="true" /> Nueva reserva</Button>
+          <Button variant="primary" onClick={() => openForm()} disabled={!data?.length}><Plus className="h-4 w-4" aria-hidden="true" /> Nueva reserva</Button>
         )}
       </PageHeader>
 
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <div className="w-44"><Input label="Fecha" type="date" value={date} onChange={(e) => setDate(e.target.value || todayStr())} /></div>
+      <DateStrip value={date} onChange={setDate} />
+
+      {/* Filtro por tipo: chips en el celular, select en escritorio */}
+      <div className="mb-4 -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 md:hidden" role="group" aria-label="Filtrar por tipo">
+        {TYPES.map(([v, l]) => (
+          <button key={v} type="button" onClick={() => setType(v)} aria-pressed={type === v}
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${type === v ? 'border-accent bg-accent text-white' : 'border-line bg-card text-mute hover:text-ink'}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+      <div className="mb-4 hidden items-end gap-3 md:flex">
         <div className="w-48">
           <Select label="Tipo" value={type} onChange={(e) => setType(e.target.value)}>
             {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -171,12 +187,33 @@ export default function Spaces() {
         </div>
       </div>
 
-      <SpacesLegend />
+      <div className="hidden md:block"><SpacesLegend /></div>
 
       {actionError && <ApiAlert error={actionError} className="mb-4" />}
       {error && <Alert className="mb-4" title="No se pudieron cargar los espacios">{error.message}</Alert>}
 
-      <Card className="p-0">
+      {/* Celular: vista agenda (sin desplazamiento horizontal) */}
+      <div className="space-y-3 md:hidden" aria-busy={loading}>
+        {loading && !data && <Spinner label="Cargando espacios…" />}
+        {spaces.map((s) => (
+          <SpaceAgendaCard
+            key={s.id}
+            space={s}
+            canCancel={canCancel}
+            canBlock={canBlock}
+            canBook={can('reservar')}
+            onCancel={setToCancel}
+            onSchedule={schedule}
+            onRelease={release}
+            onBook={(sp) => openForm(sp.id)}
+            releasing={releasingId === s.id}
+          />
+        ))}
+        {data && !spaces.length && <EmptyState title="No hay espacios para este filtro" />}
+      </div>
+
+      {/* Escritorio: línea de tiempo por horas */}
+      <Card className="hidden p-0 md:block">
         {loading && !data ? <Spinner label="Cargando espacios…" /> : (
           <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
             <div className="min-w-[956px]">
@@ -192,10 +229,10 @@ export default function Spaces() {
                 <SpaceRow
                   key={s.id}
                   space={s}
-                  canCancel={(b) => b.organizer_id === user?.id || ['admin', 'coordinador'].includes(user?.role)}
+                  canCancel={canCancel}
                   canBlock={canBlock}
                   onCancel={setToCancel}
-                  onSchedule={(sp) => { setActionError(null); setBlockTarget(sp); }}
+                  onSchedule={schedule}
                   onRelease={release}
                   releasing={releasingId === s.id}
                 />
@@ -207,7 +244,7 @@ export default function Spaces() {
       </Card>
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title="Nueva reserva" variant="drawer">
-        <BookingForm spaces={data || []} date={date} onClose={() => setFormOpen(false)} onDone={() => { setFormOpen(false); reload(); }} />
+        <BookingForm key={`${formSpaceId}-${date}`} spaces={data || []} date={date} initialSpaceId={formSpaceId} onClose={() => setFormOpen(false)} onDone={() => { setFormOpen(false); reload(); }} />
       </Modal>
 
       <SpaceBlockModal
