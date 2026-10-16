@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.pgdata*/
+*.log
+.claude/
+.DS_Store
+
+# Secretos: nunca se suben (penalización -10)
+.env
+.env.local
+.env.*.local
