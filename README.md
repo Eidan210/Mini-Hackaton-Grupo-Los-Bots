@@ -39,7 +39,12 @@ web/ (React)  ──/api──▶  server/index.js (Express)
                            └── db.js           ← PostgreSQL (Supabase) / PGlite
 ```
 
-## Uso de la IA
+## Uso de la IA (justificación)
+
+La IA no decora: decide en los dos puntos donde una persona tardaría más o se equivocaría. Clasificar una
+incidencia escrita en lenguaje natural (categoría, prioridad, área responsable y recurso afectado) y elegir
+un espacio alternativo cuando una reserva se rechaza. Todo lo demás (reglas, bloqueos, préstamos) es
+lógica determinista y testeada, para que la IA nunca pueda saltarse una regla.
 
 1. **Triaje de incidencias** (`POST /api/incidents/analyze`): el usuario describe el problema en lenguaje
    natural y Nemotron propone **título, categoría, prioridad, área responsable y el espacio o equipo afectado**,
@@ -70,13 +75,44 @@ mandar un equipo a revisión) las aplica el backend según las reglas, no la IA.
 el servidor se reinicia solo con `npm run dev`. La pantalla **Reglas activas** las muestra en lenguaje
 cotidiano y el administrador puede desactivar o reactivar cada una (se guarda en la tabla `rule_state`).
 
-## Datos oficiales
+## Datos oficiales: capacidad instalada del campus
 
-Los datos de espacios y equipos se cargan desde `server/data/*.csv` al iniciar con la base vacía, y también
-desde la pantalla **Datos importados** (CSV o JSON). Cada fila se valida: lo válido se guarda y lo
-inconsistente (capacidad negativa, código duplicado, tipo desconocido, equipo "prestado" sin préstamo…) se
-rechaza con su motivo y queda visible en la app. Para usar los datos del día, se reemplazan esos CSV o se
-importan desde la pantalla.
+Se cargan desde `server/data/espacios.csv` y `server/data/equipos.csv` (no están en el código) y se pueden
+**añadir** desde **Datos importados** (CSV o JSON) y **retirar** desde la misma pantalla (solo si no tienen
+reservas próximas ni préstamos activos).
+
+| Espacio | Capacidad | | Recurso | Cantidad |
+|---|---|---|---|---|
+| Auditorio | 100 | | Computadores | 149 |
+| Spooki | 38 | | Aires acondicionados | 19 |
+| Apolo | 34 | | Televisores | 16 |
+| Artemis | 32 | | Microondas | 2 |
+| Cosmos | 25 | | Neveras | 2 |
+| Skilab | 20 | | | |
+| Sala Blanca | 12 | | | |
+| Sala Azul | 10 | | | |
+| Sala Amarilla y Sala Verde | 6 c/u | | | |
+
+Cada fila se valida: lo válido se guarda y lo inconsistente (capacidad negativa, código duplicado, tipo
+desconocido, equipo "prestado" sin préstamo, categoría vacía) se rechaza con su motivo y queda en
+**Datos importados**, donde se puede ver, marcar como revisado o eliminar. Los CSV incluyen 5 filas así a
+propósito para la demo.
+
+## Demo: casos válidos e inválidos
+
+| Caso | Cómo probarlo | Resultado esperado |
+|---|---|---|
+| Reserva válida | Trainer reserva Cosmos mañana 12:00–13:00 para 20 personas | Se crea y aparece en el calendario |
+| R2 aforo | La misma reserva con 30 personas | Rechazada: supera la capacidad de Cosmos (25) y la IA sugiere otro espacio |
+| R1 solapamiento | Reservar Apolo hoy 09:30–10:30 | Rechazada: choca con "Matemáticas discretas" |
+| R7 campers | Un camper intenta reservar Apolo | Rechazada: los campers solo reservan cubículos (Sala Amarilla / Verde) |
+| R3 / R6 bloqueo | Reportar con IA "salió humo del televisor de Cosmos" y confirmar | La IA la clasifica; si es Alta/Crítica, Cosmos queda bloqueado hasta la fecha estimada |
+| R4 préstamos | Daniel (camper) pide un equipo | Rechazado: tiene un préstamo vencido |
+| Datos inconsistentes | Importar un CSV con capacidad `-5` | La fila se rechaza con su motivo; el resto se guarda |
+
+**Cambio en vivo ante el jurado (menos de 3 minutos):** abrir `server/rules.js`, cambiar un valor de
+`CONFIG` (por ejemplo `prestamos.maxActivosPorUsuario: 2` → `1` o `reservas.maxHoras: 4` → `2`), guardar
+(con `npm run dev` el servidor se reinicia solo) y repetir el caso inválido correspondiente.
 
 ## Acceso, roles y usuarios de prueba
 
