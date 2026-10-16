@@ -29,7 +29,13 @@ if (existsSync(dist)) {
 }
 app.use(errorHandler);
 
-await connect();
+try {
+  await connect();
+} catch (err) {
+  console.error(`\n[db] No se pudo conectar a la base de datos: ${err.message}`);
+  console.error('[db] Revisa DATABASE_URL: usuario postgres.<id-del-proyecto>, contraseña sin corchetes y método "Session pooler".\n');
+  process.exit(1);
+}
 const seeded = await seedIfEmpty();
 // En desarrollo la API va fija en 3001 (Vite usa 5173 y le hace proxy); en producción usa PORT.
 const port = process.argv.includes('--dev') ? 3001 : Number(process.env.PORT) || 3001;
