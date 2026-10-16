@@ -6,6 +6,12 @@ Un solo sistema para **reservar espacios**, **prestar equipos** y **reportar inc
 (**Nemotron 3 Ultra** de NVIDIA, vía OpenRouter) clasifica y prioriza cada incidencia y propone alternativas cuando una reserva
 se rechaza. Las reglas de negocio viven en un único archivo (`server/rules.js`) para poder cambiarlas en vivo.
 
+## Recorrido por la app
+
+![Recorrido por CampusControl](docs/demo.gif)
+
+Link de prueba: https://mini-hackaton-grupo-los-bots.onrender.com (el plan gratuito tarda ~1 min en despertar).
+
 ## Problema
 
 Campuslands crece rápido y la disponibilidad de aulas, el préstamo de equipos y la atención de incidencias
