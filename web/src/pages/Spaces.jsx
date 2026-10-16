@@ -18,6 +18,7 @@ import SpaceBlockModal from '../features/SpaceBlockModal.jsx';
 import SpacesLegend from '../features/SpacesLegend.jsx';
 import SpaceAgendaCard from '../features/SpaceAgendaCard.jsx';
 import DateStrip from '../features/DateStrip.jsx';
+import BookingDetailModal from '../features/BookingDetailModal.jsx';
 import { SPACE_TYPES, SPACE_TYPE_KEYS } from '../features/spaceTypes.js';
 import { HOURS, SLOTS, START, END } from '../features/timeline.js';
 
@@ -118,6 +119,7 @@ export default function Spaces() {
   const [formOpen, setFormOpen] = useState(false);
   const [formSpaceId, setFormSpaceId] = useState(null); // espacio preseleccionado al reservar desde una tarjeta
   const [toCancel, setToCancel] = useState(null);
+  const [detail, setDetail] = useState(null); // { booking, space } de la reserva que se está viendo
   const [cancelBusy, setCancelBusy] = useState(false);
   const [blockTarget, setBlockTarget] = useState(null); // espacio al que se le programa un bloqueo
   const [releasingId, setReleasingId] = useState(null);
@@ -129,6 +131,7 @@ export default function Spaces() {
   const canCancel = (b) => b.organizer_id === user?.id || ['admin', 'coordinador'].includes(user?.role);
   const openForm = (spaceId = null) => { setFormSpaceId(spaceId); setFormOpen(true); };
   const schedule = (sp) => { setActionError(null); setBlockTarget(sp); };
+  const openDetail = (booking, space) => setDetail({ booking, space });
 
   async function confirmCancel() {
     setCancelBusy(true);
@@ -199,10 +202,9 @@ export default function Spaces() {
           <SpaceAgendaCard
             key={s.id}
             space={s}
-            canCancel={canCancel}
             canBlock={canBlock}
             canBook={can('reservar')}
-            onCancel={setToCancel}
+            onOpen={openDetail}
             onSchedule={schedule}
             onRelease={release}
             onBook={(sp) => openForm(sp.id)}
@@ -229,9 +231,8 @@ export default function Spaces() {
                 <SpaceRow
                   key={s.id}
                   space={s}
-                  canCancel={canCancel}
                   canBlock={canBlock}
-                  onCancel={setToCancel}
+                  onOpen={openDetail}
                   onSchedule={schedule}
                   onRelease={release}
                   releasing={releasingId === s.id}
@@ -246,6 +247,13 @@ export default function Spaces() {
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title="Nueva reserva" variant="drawer">
         <BookingForm key={`${formSpaceId}-${date}`} spaces={data || []} date={date} initialSpaceId={formSpaceId} onClose={() => setFormOpen(false)} onDone={() => { setFormOpen(false); reload(); }} />
       </Modal>
+
+      <BookingDetailModal
+        detail={detail}
+        canCancel={canCancel}
+        onCancel={(b) => { setDetail(null); setToCancel(b); }}
+        onClose={() => setDetail(null)}
+      />
 
       <SpaceBlockModal
         space={blockTarget}

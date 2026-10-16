@@ -1,4 +1,4 @@
-import { Ban, LockOpen, Plus, Trash2, Users, Wrench } from 'lucide-react';
+import { Ban, ChevronRight, LockOpen, Plus, Users, Wrench } from 'lucide-react';
 import Button from '../components/Button.jsx';
 import { StatusChip } from '../components/Badge.jsx';
 import SpaceTypeChip from './SpaceTypeChip.jsx';
@@ -8,7 +8,7 @@ import { bookingStyle } from './timeline.js';
 
 // Vista agenda para el celular: una tarjeta por espacio con una barra de ocupación del día (07–21)
 // que cabe en el ancho de la pantalla y la lista de reservas debajo. Mismos datos que la línea de tiempo.
-export default function SpaceAgendaCard({ space, canCancel, canBlock, canBook, onCancel, onSchedule, onRelease, onBook, releasing }) {
+export default function SpaceAgendaCard({ space, canBlock, canBook, onOpen, onSchedule, onRelease, onBook, releasing }) {
   const type = spaceType(space.type);
   const block = space.block || null;
   const unavailable = space.status !== 'disponible';
@@ -54,17 +54,20 @@ export default function SpaceAgendaCard({ space, canCancel, canBlock, canBook, o
       {bookings.length > 0 ? (
         <ul className="mt-2 divide-y divide-line">
           {bookings.map((b) => (
-            <li key={b.id} className="flex items-center gap-3 py-2">
-              <span className="w-24 shrink-0 font-mono text-xs text-mute">{b.start_time}–{b.end_time}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm">{b.title}</span>
-                <span className="block truncate text-xs text-mute">{b.organizer_name}</span>
-              </span>
-              {canCancel(b) && (
-                <button type="button" onClick={() => onCancel(b)} aria-label={`Cancelar reserva ${b.title}`} className="shrink-0 rounded-lg p-2 text-mute hover:bg-white/10 hover:text-bad">
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </button>
-              )}
+            <li key={b.id}>
+              <button
+                type="button"
+                onClick={() => onOpen(b, space)}
+                aria-label={`Ver detalle de la reserva ${b.title}, ${b.start_time} a ${b.end_time}`}
+                className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-white/5 active:bg-white/10"
+              >
+                <span className="w-24 shrink-0 font-mono text-xs text-mute">{b.start_time}–{b.end_time}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm">{b.title}</span>
+                  <span className="block truncate text-xs text-mute">{b.organizer_name}</span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-mute" aria-hidden="true" />
+              </button>
             </li>
           ))}
         </ul>

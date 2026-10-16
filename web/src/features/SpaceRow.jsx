@@ -1,4 +1,4 @@
-import { Ban, LockOpen, Trash2, Users, Wrench } from 'lucide-react';
+import { Ban, LockOpen, Users, Wrench } from 'lucide-react';
 import Button from '../components/Button.jsx';
 import { StatusChip } from '../components/Badge.jsx';
 import SpaceTypeChip from './SpaceTypeChip.jsx';
@@ -12,7 +12,7 @@ const NOTICE_TONE = {
 };
 
 // Fila de la línea de tiempo: columna fija con datos del espacio + eje horario con las reservas
-export default function SpaceRow({ space, canCancel, canBlock, onCancel, onSchedule, onRelease, releasing }) {
+export default function SpaceRow({ space, canBlock, onOpen, onSchedule, onRelease, releasing }) {
   const type = spaceType(space.type);
   const TypeIcon = type.Icon;
   const unavailable = space.status !== 'disponible';
@@ -83,22 +83,18 @@ export default function SpaceRow({ space, canCancel, canBlock, onCancel, onSched
           </div>
         )}
         {bookings.map((b) => (
-          <div
+          <button
+            type="button"
             key={b.id}
-            className="absolute inset-y-2 z-10 flex items-center justify-between gap-1 overflow-hidden rounded-md border px-2 text-xs text-ink"
+            onClick={() => onOpen(b, space)}
+            aria-label={`Ver detalle de la reserva ${b.title}, ${b.start_time} a ${b.end_time}`}
+            className="absolute inset-y-2 z-10 flex items-center gap-1 overflow-hidden rounded-md border px-2 text-left text-xs text-ink transition hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
             style={{ ...bookingStyle(b), borderColor: type.color, backgroundColor: 'var(--color-card)', backgroundImage: `linear-gradient(${tint}, ${tint})` }}
             title={`${b.title} · ${b.start_time}–${b.end_time} · ${b.organizer_name} · ${type.label}`}
           >
-            <span className="flex min-w-0 items-center gap-1">
-              <TypeIcon className="h-3 w-3 shrink-0" style={{ color: type.color }} aria-hidden="true" />
-              <span className="truncate">{b.title}</span>
-            </span>
-            {canCancel(b) && (
-              <button type="button" onClick={() => onCancel(b)} aria-label={`Cancelar reserva ${b.title}`} className="shrink-0 rounded p-0.5 text-mute hover:bg-white/10 hover:text-bad">
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            )}
-          </div>
+            <TypeIcon className="h-3 w-3 shrink-0" style={{ color: type.color }} aria-hidden="true" />
+            <span className="truncate">{b.title}</span>
+          </button>
         ))}
       </div>
     </div>
