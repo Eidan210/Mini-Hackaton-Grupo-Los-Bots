@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Plus, Sparkles, Trash2, Users } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useLoad } from '../hooks.js';
-import { hhmmToMin, todayStr } from '../util.js';
+import { todayStr } from '../util.js';
 import { Input, PageHeader, Select } from '../components/Field.jsx';
 import Card from '../components/Card.jsx';
 import Alert, { ApiAlert } from '../components/Alert.jsx';
@@ -12,14 +12,15 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import AiPanel from '../components/AiPanel.jsx';
-import { Badge, StatusChip } from '../components/Badge.jsx';
 import { useToast } from '../components/Toast.jsx';
+import SpaceRow from '../features/SpaceRow.jsx';
+import SpaceBlockModal from '../features/SpaceBlockModal.jsx';
+import SpacesLegend from '../features/SpacesLegend.jsx';
+import { SPACE_TYPES, SPACE_TYPE_KEYS } from '../features/spaceTypes.js';
+import { HOURS, SLOTS, START, END } from '../features/timeline.js';
 
-const START = 7 * 60;
-const END = 21 * 60;
-const HOURS = Array.from({ length: 15 }, (_, i) => 7 + i);
-const TYPES = [['', 'Todos'], ['aula', 'Aulas'], ['cubiculo', 'Cubículos'], ['laboratorio', 'Laboratorios'], ['auditorio', 'Auditorio']];
-const pct = (min) => `${Math.min(100, Math.max(0, ((min - START) / (END - START)) * 100))}%`;
+const TYPES = [['', 'Todos'], ...SPACE_TYPE_KEYS.map((k) => [k, SPACE_TYPES[k].plural])];
+const hhmm = (min) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 
 // ---- Formulario de reserva + sugerencia de IA ----
 function BookingForm({ spaces, date, onDone, onClose }) {
@@ -65,7 +66,7 @@ function BookingForm({ spaces, date, onDone, onClose }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <Select label="Espacio" value={form.spaceId} onChange={set('spaceId')} required>
-        {spaces.map((s) => <option key={s.id} value={s.id}>{s.name} (cap. {s.capacity})</option>)}
+        {spaces.map((s) => <option key={s.id} value={s.id}>{s.name} (cap. {s.capacity}){s.status !== 'disponible' ? ' — no disponible ese día' : ''}</option>)}
       </Select>
       <Input label="Título" value={form.title} onChange={set('title')} required maxLength={120} placeholder="Ej. Clase de React" />
       <Input label="Fecha" type="date" value={form.date} onChange={set('date')} required />
@@ -107,54 +108,6 @@ function BookingForm({ spaces, date, onDone, onClose }) {
   );
 }
 
-// ---- Fila de la línea de tiempo ----
-function TimelineRow({ space, canCancel, canStatus, onCancel, onStatus }) {
-  const blocked = space.status !== 'disponible';
-  const bookings = (space.bookings || []).filter((b) => b.status !== 'cancelada');
-  return (
-    <div className="flex border-t border-line">
-      <div className="w-56 shrink-0 p-3">
-        <p className="truncate text-sm font-semibold">{space.name}</p>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-mute"><Users className="h-3 w-3" aria-hidden="true" /> {space.capacity}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-          <StatusChip status={space.status} />
-          {canStatus && (
-            <select
-              aria-label={`Cambiar estado de ${space.name}`}
-              value={space.status}
-              onChange={(e) => onStatus(space, e.target.value)}
-              className="rounded-md border border-line bg-panel px-1.5 py-0.5 text-xs text-mute"
-            >
-              <option value="disponible">Disponible</option>
-              <option value="mantenimiento">Mantenimiento</option>
-              <option value="bloqueado">Bloqueado</option>
-            </select>
-          )}
-        </div>
-      </div>
-      <div className="relative min-w-[700px] flex-1">
-        {HOURS.map((h, i) => <div key={h} className="absolute inset-y-0 border-l border-line/60" style={{ left: `${(i / 14) * 100}%` }} />)}
-        {blocked && <div className="stripes absolute inset-1 rounded-md" title="No disponible para reservas" />}
-        {bookings.map((b) => (
-          <div
-            key={b.id}
-            className="absolute inset-y-2 flex items-center justify-between gap-1 overflow-hidden rounded-md border border-accent/50 bg-accent/25 px-2 text-xs"
-            style={{ left: pct(hhmmToMin(b.start_time)), width: `calc(${pct(hhmmToMin(b.end_time))} - ${pct(hhmmToMin(b.start_time))})` }}
-            title={`${b.title} · ${b.start_time}–${b.end_time} · ${b.organizer_name}`}
-          >
-            <span className="truncate">{b.title}</span>
-            {canCancel(b) && (
-              <button onClick={() => onCancel(b)} aria-label={`Cancelar reserva ${b.title}`} className="shrink-0 rounded p-0.5 text-mute hover:bg-white/10 hover:text-bad">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function Spaces() {
   const { can, user } = useAuth();
   const toast = useToast();
@@ -163,10 +116,13 @@ export default function Spaces() {
   const [formOpen, setFormOpen] = useState(false);
   const [toCancel, setToCancel] = useState(null);
   const [cancelBusy, setCancelBusy] = useState(false);
+  const [blockTarget, setBlockTarget] = useState(null); // espacio al que se le programa un bloqueo
+  const [releasingId, setReleasingId] = useState(null);
   const [actionError, setActionError] = useState(null);
   const { data, loading, error, reload } = useLoad(`/spaces?date=${date}`);
 
   const spaces = useMemo(() => (data || []).filter((s) => !type || s.type === type), [data, type]);
+  const canBlock = can('cambiar_estado_recurso');
 
   async function confirmCancel() {
     setCancelBusy(true);
@@ -183,20 +139,24 @@ export default function Spaces() {
     }
   }
 
-  async function changeStatus(space, status) {
+  // Libera un bloqueo/mantenimiento. Si pertenece a una incidencia abierta el backend responde 409 (R6).
+  async function release(space) {
     setActionError(null);
+    setReleasingId(space.id);
     try {
-      await apiFetch(`/spaces/${space.id}/status`, { method: 'PATCH', body: { status } });
-      toast(`${space.name} ahora está en estado "${status}"`);
+      await apiFetch(`/spaces/${space.id}/blocks/${space.block.id}`, { method: 'DELETE' });
+      toast(`${space.name} quedó liberado`);
       reload();
     } catch (e) {
       setActionError(e);
+    } finally {
+      setReleasingId(null);
     }
   }
 
   return (
     <>
-      <PageHeader title="Espacios" subtitle="Disponibilidad por hora, de 07:00 a 21:00">
+      <PageHeader title="Espacios" subtitle={`Disponibilidad por hora, de ${hhmm(START)} a ${hhmm(END)}`}>
         {can('reservar') && (
           <Button variant="primary" onClick={() => setFormOpen(true)} disabled={!data?.length}><Plus className="h-4 w-4" aria-hidden="true" /> Nueva reserva</Button>
         )}
@@ -209,35 +169,35 @@ export default function Spaces() {
             {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </Select>
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-3 text-xs text-mute">
-          <span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-accent/40" /> Reserva</span>
-          <span className="flex items-center gap-1"><span className="stripes h-3 w-3 rounded border border-line" /> No disponible</span>
-        </div>
       </div>
+
+      <SpacesLegend />
 
       {actionError && <ApiAlert error={actionError} className="mb-4" />}
       {error && <Alert className="mb-4" title="No se pudieron cargar los espacios">{error.message}</Alert>}
 
       <Card className="p-0">
         {loading && !data ? <Spinner label="Cargando espacios…" /> : (
-          <div className="overflow-x-auto">
+          <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
             <div className="min-w-[956px]">
               <div className="flex">
-                <div className="w-56 shrink-0 p-3 text-xs font-medium text-mute">Espacio</div>
+                <div className="sticky left-0 z-20 w-64 shrink-0 bg-card p-3 text-xs font-medium text-mute">Espacio</div>
                 <div className="relative h-9 min-w-[700px] flex-1">
                   {HOURS.slice(0, -1).map((h, i) => (
-                    <span key={h} className="absolute top-2 text-[11px] text-mute" style={{ left: `calc(${(i / 14) * 100}% + 4px)` }}>{String(h).padStart(2, '0')}:00</span>
+                    <span key={h} className="absolute top-2 text-[11px] text-mute" style={{ left: `calc(${(i / SLOTS) * 100}% + 4px)` }}>{String(h).padStart(2, '0')}:00</span>
                   ))}
                 </div>
               </div>
               {spaces.map((s) => (
-                <TimelineRow
+                <SpaceRow
                   key={s.id}
                   space={s}
                   canCancel={(b) => b.organizer_id === user?.id || ['admin', 'coordinador'].includes(user?.role)}
-                  canStatus={can('cambiar_estado_recurso')}
+                  canBlock={canBlock}
                   onCancel={setToCancel}
-                  onStatus={changeStatus}
+                  onSchedule={(sp) => { setActionError(null); setBlockTarget(sp); }}
+                  onRelease={release}
+                  releasing={releasingId === s.id}
                 />
               ))}
             </div>
@@ -249,6 +209,13 @@ export default function Spaces() {
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title="Nueva reserva" variant="drawer">
         <BookingForm spaces={data || []} date={date} onClose={() => setFormOpen(false)} onDone={() => { setFormOpen(false); reload(); }} />
       </Modal>
+
+      <SpaceBlockModal
+        space={blockTarget}
+        date={date}
+        onClose={() => setBlockTarget(null)}
+        onDone={() => { setBlockTarget(null); reload(); }}
+      />
 
       <Modal open={!!toCancel} onClose={() => setToCancel(null)} title="Cancelar reserva">
         <p className="text-sm text-mute">¿Cancelar la reserva "{toCancel?.title}" ({toCancel?.start_time}–{toCancel?.end_time})?</p>

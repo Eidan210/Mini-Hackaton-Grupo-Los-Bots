@@ -19,7 +19,7 @@ export function ToastProvider({ children }) {
         {items.map((t) => {
           const Icon = t.tone === 'success' ? CheckCircle2 : XCircle;
           return (
-            <div key={t.id} className={`pointer-events-auto flex items-start gap-2 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg ${t.tone === 'success' ? 'bg-ok' : 'bg-bad'}`}>
+            <div key={t.id} className={`pointer-events-auto flex items-start gap-2 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg ${t.tone === 'success' ? 'bg-[#1d8148]' : 'bg-[#c42b2f]'}`}>
               <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{t.message}</span>
             </div>
