@@ -13,6 +13,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import { Badge } from '../components/Badge.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { formatDateTime } from '../util.js';
+import CatalogRemove from '../features/CatalogRemove.jsx';
 
 /* ───────── Formato esperado (lo que valida el importador del servidor) ───────── */
 
@@ -381,6 +382,7 @@ export default function ImportData() {
           </div>
         )}
       </Modal>
+      {canImport && <CatalogRemove />}
     </>
   );
 }
