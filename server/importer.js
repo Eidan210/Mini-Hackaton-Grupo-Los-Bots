@@ -37,7 +37,12 @@ const norm = (v) => String(v ?? '').trim().toLowerCase().normalize('NFD').replac
 const ALIAS = {
   type: { aula: 'aula', salon: 'aula', cubiculo: 'cubiculo', laboratorio: 'laboratorio', lab: 'laboratorio', auditorio: 'auditorio' },
   spaceStatus: { disponible: 'disponible', '': 'disponible', mantenimiento: 'mantenimiento', bloqueado: 'bloqueado', inhabilitado: 'bloqueado' },
-  category: { portatil: 'portatil', laptop: 'portatil', computador_portatil: 'portatil', proyector: 'proyector', tablet: 'tablet', audio: 'audio', red: 'red', otro: 'otro' },
+  category: {
+    portatil: 'portatil', laptop: 'portatil', computador_portatil: 'portatil', proyector: 'proyector', tablet: 'tablet', audio: 'audio', red: 'red', otro: 'otro',
+    computador: 'computador', pc: 'computador', computador_de_escritorio: 'computador',
+    aire: 'aire', aire_acondicionado: 'aire', tv: 'tv', televisor: 'tv',
+    electrodomestico: 'electrodomestico', microondas: 'electrodomestico', nevera: 'electrodomestico',
+  },
   equipmentStatus: { disponible: 'disponible', '': 'disponible', en_revision: 'en_revision', revision: 'en_revision', mantenimiento: 'en_revision', danado: 'danado', inhabilitado: 'danado' },
 };
 

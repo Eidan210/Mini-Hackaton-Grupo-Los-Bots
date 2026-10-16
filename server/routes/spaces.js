@@ -145,4 +145,23 @@ router.post('/ai/recommend-space', async (req, res) => {
   res.json({ ...result, candidates: candidates.length });
 });
 
+// Retirar un elemento del catálogo (la capacidad instalada se puede añadir desde "Datos importados" y quitar aquí).
+router.delete('/spaces/:id', requirePermiso('importar_datos'), async (req, res) => {
+  const result = await tx(async ({ query: q }) => {
+    const { rows } = await q('SELECT * FROM spaces WHERE id = $1 FOR UPDATE', [req.params.id]);
+    if (!rows[0]) throw notFound('El espacio');
+    const { rows: uso } = await q(`SELECT count(*)::int AS n FROM bookings WHERE space_id = $1 AND status = 'confirmada' AND date >= to_char(now(), 'YYYY-MM-DD')`, [req.params.id]);
+    if (uso[0].n > 0) {
+      throw new HttpError(409, 'EN_USO', `No se puede retirar "${rows[0].name}": tiene reservas próximas; cancélalas primero.`);
+    }
+    await q('DELETE FROM space_blocks WHERE space_id = $1', [req.params.id]);
+    await q('UPDATE incidents SET space_id = NULL WHERE space_id = $1', [req.params.id]);
+    await q('DELETE FROM bookings WHERE space_id = $1', [req.params.id]);
+    await q('DELETE FROM spaces WHERE id = $1', [req.params.id]);
+    await logActivity(q, 'estado', `${req.user.name} retiró ${rows[0].name} (${rows[0].code}) del catálogo`, req.user.id);
+    return { ok: true };
+  });
+  res.json(result);
+});
+
 export default router;

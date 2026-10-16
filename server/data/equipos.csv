@@ -1,14 +1,191 @@
 codigo,nombre,categoria,ubicacion,estado
-LP-001,Computador portátil Lenovo ThinkPad,Portátil,Biblioteca,disponible
-LP-002,Computador portátil Lenovo ThinkPad,Portátil,Lab. Cómputo 1,disponible
-LP-003,Computador portátil Dell Latitude,Portátil,Lab. Cómputo 2,disponible
-LP-004,Computador portátil Dell Latitude,Portátil,Lab. Cómputo 2,disponible
-PR-101,Proyector Epson EB-X51,Proyector,Aula A-101,disponible
-PR-102,Proyector Epson EB-X51,Proyector,Lab. Cómputo 2,dañado
-PR-103,Proyector BenQ MW560,Proyector,Aula A-102,disponible
-TB-015,Tablet Samsung Galaxy Tab A9,Tablet,Dirección TIC,disponible
-TB-016,Tablet Samsung Galaxy Tab A9,Tablet,Soporte Técnico,en revisión
-AU-001,Kit de micrófonos inalámbricos,Audio,Auditorio Principal,disponible
-RT-001,Router de respaldo TP-Link,Red,Dirección TIC,disponible
-LP-099,Computador portátil HP,Portátil,Biblioteca,prestado
+PC-001,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-002,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-003,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-004,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-005,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-006,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-007,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-008,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-009,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-010,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-011,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-012,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-013,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-014,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-015,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-016,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-017,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-018,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-019,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-020,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-021,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-022,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-023,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-024,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-025,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-026,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-027,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-028,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-029,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-030,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-031,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-032,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-033,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-034,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-035,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-036,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-037,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-038,Computador de escritorio Spooki,computador,Spooki,disponible
+PC-039,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-040,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-041,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-042,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-043,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-044,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-045,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-046,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-047,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-048,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-049,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-050,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-051,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-052,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-053,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-054,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-055,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-056,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-057,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-058,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-059,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-060,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-061,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-062,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-063,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-064,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-065,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-066,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-067,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-068,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-069,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-070,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-071,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-072,Computador de escritorio Apolo,computador,Apolo,disponible
+PC-073,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-074,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-075,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-076,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-077,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-078,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-079,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-080,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-081,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-082,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-083,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-084,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-085,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-086,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-087,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-088,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-089,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-090,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-091,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-092,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-093,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-094,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-095,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-096,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-097,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-098,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-099,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-100,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-101,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-102,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-103,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-104,Computador de escritorio Artemis,computador,Artemis,disponible
+PC-105,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-106,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-107,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-108,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-109,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-110,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-111,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-112,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-113,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-114,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-115,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-116,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-117,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-118,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-119,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-120,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-121,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-122,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-123,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-124,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-125,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-126,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-127,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-128,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-129,Computador de escritorio Cosmos,computador,Cosmos,disponible
+PC-130,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-131,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-132,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-133,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-134,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-135,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-136,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-137,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-138,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-139,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-140,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-141,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-142,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-143,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-144,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-145,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-146,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-147,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-148,Computador de escritorio Skilab,computador,Skilab,disponible
+PC-149,Computador de escritorio Skilab,computador,Skilab,disponible
+AC-01,Aire acondicionado,aire,Auditorio,disponible
+AC-02,Aire acondicionado,aire,Auditorio,disponible
+AC-03,Aire acondicionado,aire,Cosmos,disponible
+AC-04,Aire acondicionado,aire,Cosmos,disponible
+AC-05,Aire acondicionado,aire,Skilab,disponible
+AC-06,Aire acondicionado,aire,Skilab,disponible
+AC-07,Aire acondicionado,aire,Spooki,disponible
+AC-08,Aire acondicionado,aire,Spooki,disponible
+AC-09,Aire acondicionado,aire,Spooki,disponible
+AC-10,Aire acondicionado,aire,Apolo,disponible
+AC-11,Aire acondicionado,aire,Apolo,disponible
+AC-12,Aire acondicionado,aire,Artemis,disponible
+AC-13,Aire acondicionado,aire,Artemis,disponible
+AC-14,Aire acondicionado,aire,Sala Blanca,disponible
+AC-15,Aire acondicionado,aire,Sala Azul,disponible
+AC-16,Aire acondicionado,aire,Sala Amarilla,disponible
+AC-17,Aire acondicionado,aire,Sala Verde,disponible
+AC-18,Aire acondicionado,aire,Recepción,disponible
+AC-19,Aire acondicionado,aire,Zona común,disponible
+TV-01,Televisor,tv,Auditorio,disponible
+TV-02,Televisor,tv,Auditorio,disponible
+TV-03,Televisor,tv,Cosmos,disponible
+TV-04,Televisor,tv,Skilab,disponible
+TV-05,Televisor,tv,Spooki,disponible
+TV-06,Televisor,tv,Spooki,disponible
+TV-07,Televisor,tv,Apolo,disponible
+TV-08,Televisor,tv,Apolo,disponible
+TV-09,Televisor,tv,Artemis,disponible
+TV-10,Televisor,tv,Artemis,disponible
+TV-11,Televisor,tv,Sala Blanca,disponible
+TV-12,Televisor,tv,Sala Azul,disponible
+TV-13,Televisor,tv,Sala Amarilla,disponible
+TV-14,Televisor,tv,Sala Verde,disponible
+TV-15,Televisor,tv,Recepción,disponible
+TV-16,Televisor,tv,Zona común,disponible
+MW-01,Microondas,electrodomestico,Zona común,disponible
+MW-02,Microondas,electrodomestico,Zona común,disponible
+NV-01,Nevera,electrodomestico,Zona común,disponible
+NV-02,Nevera,electrodomestico,Zona común,disponible
+PC-999,Computador sin estado válido,computador,Cosmos,prestado
 XX-001,Equipo sin categoría,,Bodega,disponible

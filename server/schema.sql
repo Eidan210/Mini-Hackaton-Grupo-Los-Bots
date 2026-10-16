@@ -122,6 +122,14 @@ ALTER TABLE import_errors ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 ALTER TABLE activity ADD COLUMN IF NOT EXISTS user_id TEXT REFERENCES users(id);
 ALTER TABLE activity ADD COLUMN IF NOT EXISTS target_user_id TEXT REFERENCES users(id);
 
+-- v3: categorías de la capacidad instalada real (computadores, aires, TV, electrodomésticos). Las valida el importador.
+ALTER TABLE equipment DROP CONSTRAINT IF EXISTS equipment_category_check;
+
+CREATE TABLE IF NOT EXISTS app_meta (
+  key    TEXT PRIMARY KEY,
+  value  TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS rule_state (
   id      TEXT PRIMARY KEY,
   activa  BOOLEAN NOT NULL DEFAULT true

@@ -129,4 +129,22 @@ router.post('/loans/:id/return', async (req, res) => {
   res.json({ loan });
 });
 
+// Retirar un elemento del catálogo (la capacidad instalada se puede añadir desde "Datos importados" y quitar aquí).
+router.delete('/equipment/:id', requirePermiso('importar_datos'), async (req, res) => {
+  const result = await tx(async ({ query: q }) => {
+    const { rows } = await q('SELECT * FROM equipment WHERE id = $1 FOR UPDATE', [req.params.id]);
+    if (!rows[0]) throw notFound('El equipo');
+    const { rows: uso } = await q(`SELECT count(*)::int AS n FROM loans WHERE equipment_id = $1 AND status = 'activo'`, [req.params.id]);
+    if (uso[0].n > 0) {
+      throw new HttpError(409, 'EN_USO', `No se puede retirar "${rows[0].name}": está prestado; registra primero la devolución.`);
+    }
+    await q('UPDATE incidents SET equipment_id = NULL WHERE equipment_id = $1', [req.params.id]);
+    await q('DELETE FROM loans WHERE equipment_id = $1', [req.params.id]);
+    await q('DELETE FROM equipment WHERE id = $1', [req.params.id]);
+    await logActivity(q, 'estado', `${req.user.name} retiró ${rows[0].name} (${rows[0].code}) del catálogo`, req.user.id);
+    return { ok: true };
+  });
+  res.json(result);
+});
+
 export default router;
